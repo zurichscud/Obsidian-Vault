@@ -23,6 +23,8 @@ X-Requested-With
 
 ## 5. 代码示例
 
+以下为实现上述全链路追踪标识的代码：
+
 ```js
 export const requestContext: RequestHandler = (req, res, next) => {
   const incomingId = req.headers['x-request-id'];

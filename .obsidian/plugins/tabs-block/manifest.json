@@ -1,0 +1,9 @@
+{
+  "id": "tabs-block",
+  "name": "Tabs Block",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "用 tabs 代码块创建页签，每个页签以 === 标题 开头，内部支持完整 Markdown（双链、嵌入、表格、嵌套代码块）。",
+  "author": "zurichscud",
+  "isDesktopOnly": false
+}

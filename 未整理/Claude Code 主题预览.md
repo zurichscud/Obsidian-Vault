@@ -87,3 +87,42 @@ function shouldRevalidate(cache) {
 
 [^1]: 脚注区域会以一条细线开始。
 
+
+## 折叠块
+
+<details><summary>标题</summary>
+
+- a
+- b
+`abc`
+</details>
+
+
+## Tabs
+
+```tabs
+=== 第一个页签
+这里可以用 **Markdown**，也可以用 [[双链]]。
+
+=== 第二个页签
+5555
+
+=== 第三个页签
+`code`
+```
+
+
+
+
+## QA
+
+```qa
+=== 问题1
+答案
+
+=== 问题2
+答案
+```
+
+
+## END

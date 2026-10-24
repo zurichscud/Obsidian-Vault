@@ -1,0 +1,176 @@
+/* tabs-block：页签视图
+   未激活页签不带任何背景，与激活页签的唯一区别是下方那条横线 */
+
+.tabs-block {
+  margin: 0.5em 0;
+}
+
+.tabs-block-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25em;
+  margin-bottom: 0.75em;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tabs-block .tabs-block-nav .tabs-block-tab {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0 0 -1px;
+  padding: 0.45em 0.6em;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  font-family: inherit;
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-medium);
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 120ms ease;
+}
+
+.tabs-block .tabs-block-nav .tabs-block-tab:hover {
+  background: none;
+  background-color: transparent;
+  border-bottom-color: var(--background-modifier-border-hover);
+}
+
+.tabs-block .tabs-block-nav .tabs-block-tab.is-active {
+  background: none;
+  background-color: transparent;
+  border-bottom-color: var(--interactive-accent);
+  color: var(--text-normal);
+}
+
+.tabs-block .tabs-block-nav .tabs-block-tab:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+.tabs-block-pane {
+  display: none;
+}
+
+.tabs-block-pane.is-active {
+  display: block;
+}
+
+.tabs-block-pane > :first-child,
+.tabs-block-intro > :first-child {
+  margin-top: 0;
+}
+
+.tabs-block-pane > :last-child,
+.tabs-block-intro > :last-child {
+  margin-bottom: 0;
+}
+
+.tabs-block-intro {
+  margin-bottom: 0.75em;
+}
+
+/* 页签内的表格/代码块跟随容器宽度，不撑破正文 */
+.tabs-block-pane .table-wrapper,
+.tabs-block-pane table,
+.tabs-block-pane pre {
+  max-width: 100%;
+}
+
+/* ---------- qa 块：问题折叠，答案展开 ---------- */
+
+.qa-block {
+  display: flex;
+  flex-direction: column;
+  margin: 1.75em 0;
+}
+
+.qa-item {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+/* 问答之间一条细分隔线，最后一条不画 */
+.qa-item:not(:last-child) {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.qa-question {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0.75em 2.2em 0.75em 0;
+  color: var(--text-normal);
+  font-weight: 700;
+  line-height: 1.45;
+  cursor: pointer;
+  user-select: none;
+  transition: color 120ms ease;
+}
+
+/* 去掉浏览器/WebKit 自带的三角 */
+.qa-question::-webkit-details-marker {
+  display: none;
+}
+
+.qa-question::marker {
+  content: "";
+}
+
+/* 自绘箭头：收起时朝下，展开时朝上 */
+.qa-question::before {
+  content: "";
+  position: absolute;
+  right: 0.3em;
+  top: 50%;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform 200ms ease, border-color 120ms ease;
+}
+
+.qa-item[open] > .qa-question::before {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+.qa-question:hover {
+  color: var(--text-accent);
+}
+
+.qa-question:hover::before {
+  border-color: var(--text-accent);
+}
+
+.qa-question:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-s);
+}
+
+.qa-answer {
+  padding: 0 2.2em 1.1em 0;
+  color: var(--text-normal);
+}
+
+.qa-answer > :first-child,
+.qa-block-intro > :first-child {
+  margin-top: 0;
+}
+
+.qa-answer > :last-child,
+.qa-block-intro > :last-child {
+  margin-bottom: 0;
+}
+
+.qa-block-intro {
+  margin-bottom: 0.75em;
+}

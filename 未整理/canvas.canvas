@@ -1,6 +1,29 @@
 {
 	"nodes":[
-		{"id":"dda9637abcf2001f","type":"text","text":"aaa","x":-420,"y":-280,"width":250,"height":60}
+		{"id":"g1","type":"group","label":"HTTP 缓存判断流程","x":-820,"y":-420,"width":2180,"height":920},
+		{"id":"n1","type":"text","text":"**发起请求**\nGET /page","x":-760,"y":-50,"width":240,"height":100,"color":"5"},
+		{"id":"n2","type":"text","text":"**本地存在\n可用缓存副本？**","x":-400,"y":-70,"width":260,"height":120,"color":"2"},
+		{"id":"n3","type":"text","text":"**缓存仍新鲜？**\nmax-age / Expires\n尚未过期","x":-40,"y":-80,"width":280,"height":140,"color":"2"},
+		{"id":"n4","type":"text","text":"**新鲜 → 强缓存**\n直接使用本地副本\n不产生网络请求","x":-40,"y":-340,"width":280,"height":140,"color":"4"},
+		{"id":"n5","type":"text","text":"**响应带验证器？**\nETag / Last-Modified","x":340,"y":-80,"width":260,"height":140,"color":"2"},
+		{"id":"n6","type":"text","text":"**条件请求**\nIf-None-Match\nIf-Modified-Since","x":680,"y":-90,"width":260,"height":160,"color":"6"},
+		{"id":"n7","type":"text","text":"**304 Not Modified？**","x":1020,"y":-70,"width":260,"height":120,"color":"2"},
+		{"id":"n8","type":"text","text":"**304**\n使用本地副本\n并刷新新鲜度","x":1020,"y":-340,"width":260,"height":120,"color":"4"},
+		{"id":"n9","type":"text","text":"**向服务器发起\n普通请求**","x":-40,"y":280,"width":280,"height":100,"color":"6"},
+		{"id":"n10","type":"text","text":"**200 OK**\n按 Cache-Control\n存储 / 更新缓存\n返回新响应","x":680,"y":280,"width":320,"height":140,"color":"4"},
+		{"id":"n11","type":"text","text":"### 判断依据\n\n**1. 新鲜度（强缓存）**\n- `Cache-Control: max-age=N`（相对秒数）\n- `Expires`（绝对时间，优先级低于 max-age）\n- `s-maxage` 仅对共享缓存生效\n\n**2. 验证器（协商缓存）**\n- `ETag` → `If-None-Match`\n- `Last-Modified` → `If-Modified-Since`\n\n**3. 其他指令**\n- `no-store`：完全不写入缓存\n- `no-cache`：可以存储，但每次使用前必须验证\n- `must-revalidate`：过期后必须验证，不得使用过期副本\n- `private` / `public`：共享缓存（CDN、代理）能否存储\n- `Vary`：参与缓存键，同一 URL 可能有多份副本\n- 无显式新鲜度时，可用 `Last-Modified` 推算启发式过期时间","x":-820,"y":580,"width":660,"height":480}
 	],
-	"edges":[]
+	"edges":[
+		{"id":"e1","fromNode":"n1","fromSide":"right","toNode":"n2","toSide":"left"},
+		{"id":"e2","fromNode":"n2","fromSide":"bottom","toNode":"n9","toSide":"top","label":"否 · 无缓存"},
+		{"id":"e3","fromNode":"n2","fromSide":"right","toNode":"n3","toSide":"left","label":"是"},
+		{"id":"e4","fromNode":"n3","fromSide":"right","toNode":"n5","toSide":"left","label":"否 · 已过期"},
+		{"id":"e5","fromNode":"n3","fromSide":"top","toNode":"n4","toSide":"bottom","label":"是 · 新鲜"},
+		{"id":"e6","fromNode":"n5","fromSide":"right","toNode":"n6","toSide":"left","label":"是"},
+		{"id":"e7","fromNode":"n5","fromSide":"bottom","toNode":"n9","toSide":"right","label":"否 · 无验证器"},
+		{"id":"e8","fromNode":"n6","fromSide":"right","toNode":"n7","toSide":"left"},
+		{"id":"e9","fromNode":"n7","fromSide":"top","toNode":"n8","toSide":"bottom","label":"是 · 304"},
+		{"id":"e10","fromNode":"n7","fromSide":"bottom","toNode":"n10","toSide":"top","label":"否 · 200"},
+		{"id":"e11","fromNode":"n9","fromSide":"right","toNode":"n10","toSide":"left"}
+	]
 }
