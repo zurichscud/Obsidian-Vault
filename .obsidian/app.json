@@ -1,3 +1,6 @@
 {
-  "promptDelete": false
+  "promptDelete": false,
+  "showLineNumber": false,
+  "spellcheck": false,
+  "attachmentFolderPath": "./asserts"
 }

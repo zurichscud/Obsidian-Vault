@@ -1,0 +1,1822 @@
+/* ==========================================================================
+   Claude Code — an Obsidian theme
+   Warm paper, ink and terracotta. Monospace chrome, serif titles.
+   Light: the writing room. Dark: the terminal.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Shared tokens
+   -------------------------------------------------------------------------- */
+
+body {
+  --cc-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --cc-serif: "Iowan Old Style", "Charter", "Tiempos Headline", "Source Serif 4",
+    "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", Georgia, serif;
+  --cc-mono: "SF Mono", "JetBrains Mono", "Hack Nerd Font Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --font-text-theme: var(--cc-sans);
+  --font-interface-theme: var(--cc-sans);
+  --font-monospace-theme: var(--cc-mono);
+
+  --line-height-normal: 1.7;
+  --line-height-tight: 1.35;
+  --bold-weight: 600;
+  --bold-color: var(--cc-ink);
+  --italic-color: var(--cc-ink);
+
+  --radius-s: 3px;
+  --radius-m: 5px;
+  --radius-l: 7px;
+  --radius-xl: 10px;
+
+  --cc-caret: var(--cc-accent);
+}
+
+/* --------------------------------------------------------------------------
+   2. Palette
+   -------------------------------------------------------------------------- */
+
+body.theme-light {
+  --cc-bg: #faf9f4;
+  --cc-bg-alt: #f4f2e9;
+  --cc-bg-side: #f1efe5;
+  --cc-bg-active: #e8e5d9;
+  --cc-line: #e3dfd2;
+  --cc-line-strong: #cfcabb;
+
+  --cc-ink: #1f1e1d;
+  --cc-ink-2: #45433d;
+  --cc-muted: #6b685f;
+  --cc-faint: #98948a;
+
+  --cc-accent: #b8532f;
+  --cc-accent-rgb: 184, 83, 47;
+  --cc-accent-bright: #d97757;
+  --cc-accent-hover: #96401f;
+  --cc-accent-wash: #f6e7de;
+  --cc-on-accent: #fffdf8;
+
+  --cc-selection: #ecd9c9;
+  --cc-highlight: #f3e3bd;
+  --cc-code-bg: #f4f1e7;
+  --cc-inline-code: #93472a;
+  --cc-cover: rgba(31, 30, 29, 0.26);
+  --cc-shadow: 0 1px 2px rgba(31, 30, 29, 0.05);
+  --cc-shadow-pop: 0 18px 48px rgba(31, 30, 29, 0.16),
+    0 2px 6px rgba(31, 30, 29, 0.06);
+
+  --cc-success: #4f6b3a;
+  --cc-warning: #8a5c1e;
+  --cc-error: #a8423a;
+  --cc-error-rgb: 168, 66, 58;
+
+  --cc-syn-comment: #8a8578;
+  --cc-syn-keyword: #a94a2a;
+  --cc-syn-string: #5b7442;
+  --cc-syn-number: #9a6a1e;
+  --cc-syn-function: #3d6a86;
+  --cc-syn-property: #7b5a86;
+  --cc-syn-operator: #6b685f;
+  --cc-syn-tag: #8a5a3a;
+
+  --accent-h: 16;
+  --accent-s: 59%;
+  --accent-l: 45%;
+
+  --color-base-00: #ffffff;
+  --color-base-10: #faf9f4;
+  --color-base-20: #f1efe5;
+  --color-base-25: #e8e5d9;
+  --color-base-30: #e3dfd2;
+  --color-base-35: #d5d0c1;
+  --color-base-40: #b9b3a3;
+  --color-base-50: #98948a;
+  --color-base-60: #6b685f;
+  --color-base-70: #45433d;
+  --color-base-80: #33312c;
+  --color-base-90: #262521;
+  --color-base-100: #1f1e1d;
+
+  --color-red: #a8423a;
+  --color-red-rgb: 168, 66, 58;
+  --color-orange: #b8532f;
+  --color-orange-rgb: 184, 83, 47;
+  --color-yellow: #8a5c1e;
+  --color-yellow-rgb: 138, 92, 30;
+  --color-green: #4f6b3a;
+  --color-green-rgb: 79, 107, 58;
+  --color-cyan: #4f7a7c;
+  --color-cyan-rgb: 79, 122, 124;
+  --color-blue: #4e7087;
+  --color-blue-rgb: 78, 112, 135;
+  --color-purple: #7a6088;
+  --color-purple-rgb: 122, 96, 136;
+  --color-pink: #b0607a;
+  --color-pink-rgb: 176, 96, 122;
+}
+
+body.theme-dark {
+  --cc-bg: #211f1c;
+  --cc-bg-alt: #1b1a17;
+  --cc-bg-side: #191816;
+  --cc-bg-active: #2a2824;
+  --cc-line: #37342e;
+  --cc-line-strong: #4a463d;
+
+  --cc-ink: #ece9df;
+  --cc-ink-2: #cfcbbf;
+  --cc-muted: #9b9689;
+  --cc-faint: #6f6b61;
+
+  --cc-accent: #d97757;
+  --cc-accent-rgb: 217, 119, 87;
+  --cc-accent-bright: #e88f6f;
+  --cc-accent-hover: #e88f6f;
+  --cc-accent-wash: #35251d;
+  --cc-on-accent: #211611;
+
+  --cc-selection: #4a3428;
+  --cc-highlight: #4a3b1e;
+  --cc-code-bg: #191816;
+  --cc-inline-code: #e8a184;
+  --cc-cover: rgba(0, 0, 0, 0.55);
+  --cc-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --cc-shadow-pop: 0 24px 60px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+
+  --cc-success: #9db47a;
+  --cc-warning: #d9a85c;
+  --cc-error: #e07a6e;
+  --cc-error-rgb: 224, 122, 110;
+
+  --cc-syn-comment: #7d786c;
+  --cc-syn-keyword: #e08a6b;
+  --cc-syn-string: #b3c48a;
+  --cc-syn-number: #e0b07a;
+  --cc-syn-function: #8fb8d0;
+  --cc-syn-property: #c3a4cf;
+  --cc-syn-operator: #a8a294;
+  --cc-syn-tag: #d9a487;
+
+  --accent-h: 15;
+  --accent-s: 63%;
+  --accent-l: 60%;
+
+  --color-base-00: #161513;
+  --color-base-10: #1b1a17;
+  --color-base-20: #211f1c;
+  --color-base-25: #262420;
+  --color-base-30: #37342e;
+  --color-base-35: #46423a;
+  --color-base-40: #5a564d;
+  --color-base-50: #9b9689;
+  --color-base-60: #b9b4a7;
+  --color-base-70: #cfcbbf;
+  --color-base-80: #e0ddd3;
+  --color-base-90: #ece9df;
+  --color-base-100: #f6f4ec;
+
+  --color-red: #e07a6e;
+  --color-red-rgb: 224, 122, 110;
+  --color-orange: #d97757;
+  --color-orange-rgb: 217, 119, 87;
+  --color-yellow: #d9a85c;
+  --color-yellow-rgb: 217, 168, 92;
+  --color-green: #9db47a;
+  --color-green-rgb: 157, 180, 122;
+  --color-cyan: #7fb3b0;
+  --color-cyan-rgb: 127, 179, 176;
+  --color-blue: #8fafc4;
+  --color-blue-rgb: 143, 175, 196;
+  --color-purple: #b39bc0;
+  --color-purple-rgb: 179, 155, 192;
+  --color-pink: #d89aab;
+  --color-pink-rgb: 216, 154, 171;
+}
+
+/* --------------------------------------------------------------------------
+   3. Core mapping
+   -------------------------------------------------------------------------- */
+
+body {
+  --background-primary: var(--cc-bg);
+  --background-primary-alt: var(--cc-bg-alt);
+  --background-secondary: var(--cc-bg-side);
+  --background-secondary-alt: var(--cc-bg-active);
+
+  --background-modifier-border: var(--cc-line);
+  --background-modifier-border-hover: var(--cc-line-strong);
+  --background-modifier-border-focus: var(--cc-accent);
+  --background-modifier-hover: color-mix(in srgb, var(--cc-ink) 5%, transparent);
+  --background-modifier-active-hover: color-mix(
+    in srgb,
+    var(--cc-accent) 13%,
+    transparent
+  );
+  --background-modifier-form-field: var(--cc-bg-alt);
+  --background-modifier-form-field-highlighted: var(--cc-bg-alt);
+  --background-modifier-box-shadow: rgba(0, 0, 0, 0.18);
+  --background-modifier-success: color-mix(
+    in srgb,
+    var(--cc-success) 14%,
+    transparent
+  );
+  --background-modifier-error: color-mix(
+    in srgb,
+    var(--cc-error) 14%,
+    transparent
+  );
+  --background-modifier-error-rgb: var(--cc-error-rgb);
+  --background-modifier-error-hover: color-mix(
+    in srgb,
+    var(--cc-error) 22%,
+    transparent
+  );
+  --background-modifier-cover: var(--cc-cover);
+
+  --text-normal: var(--cc-ink);
+  --text-muted: var(--cc-muted);
+  --text-faint: var(--cc-faint);
+  --text-on-accent: var(--cc-on-accent);
+  --text-on-accent-inverted: var(--cc-on-accent);
+  --text-success: var(--cc-success);
+  --text-warning: var(--cc-warning);
+  --text-error: var(--cc-error);
+  --text-accent: var(--cc-accent);
+  --text-accent-hover: var(--cc-accent-hover);
+  --text-selection: var(--cc-selection);
+  --text-highlight-bg: var(--cc-highlight);
+  --text-highlight-bg-active: var(--cc-highlight);
+
+  --interactive-normal: var(--cc-bg-alt);
+  --interactive-hover: var(--cc-bg-active);
+  --interactive-accent: var(--cc-accent);
+  --interactive-accent-hover: var(--cc-accent-hover);
+  --interactive-accent-rgb: var(--cc-accent-rgb);
+  --interactive-success: var(--cc-success);
+
+  --color-accent: var(--cc-accent);
+  --color-accent-1: var(--cc-accent-bright);
+  --color-accent-2: var(--cc-accent-hover);
+
+  --scrollbar-bg: transparent;
+  --scrollbar-thumb-bg: color-mix(in srgb, var(--cc-ink) 16%, transparent);
+  --scrollbar-active-thumb-bg: color-mix(
+    in srgb,
+    var(--cc-accent) 55%,
+    transparent
+  );
+
+  --divider-color: var(--cc-line);
+  --divider-width: 1px;
+  --divider-width-hover: 2px;
+
+  /* Typography */
+  --inline-title-color: var(--cc-ink);
+  --inline-title-font: var(--cc-serif);
+  --inline-title-size: 2.05em;
+  --inline-title-weight: 500;
+  --inline-title-margin-bottom: 0.55em;
+
+  --heading-formatting: var(--cc-faint);
+  --h1-font: var(--cc-serif);
+  --h2-font: var(--cc-serif);
+  --h3-font: var(--cc-sans);
+  --h4-font: var(--cc-sans);
+  --h5-font: var(--cc-sans);
+  --h6-font: var(--cc-mono);
+  --h1-size: 1.9em;
+  --h1-weight: 500;
+  --h1-line-height: 1.25;
+  --h1-letter-spacing: -0.02em;
+  --h1-color: var(--cc-ink);
+  --h2-size: 1.42em;
+  --h2-weight: 500;
+  --h2-line-height: 1.3;
+  --h2-letter-spacing: -0.012em;
+  --h2-color: var(--cc-ink);
+  --h3-size: 1.18em;
+  --h3-weight: 600;
+  --h3-line-height: 1.35;
+  --h3-letter-spacing: -0.005em;
+  --h3-color: var(--cc-ink);
+  --h4-size: 1.03em;
+  --h4-weight: 600;
+  --h4-letter-spacing: -0.002em;
+  --h4-color: var(--cc-ink);
+  --h5-size: 0.92em;
+  --h5-weight: 600;
+  --h5-letter-spacing: 0.07em;
+  --h5-color: var(--cc-ink-2);
+  --h6-size: 0.86em;
+  --h6-weight: 600;
+  --h6-letter-spacing: 0.08em;
+  --h6-color: var(--cc-muted);
+
+  --link-color: var(--cc-accent);
+  --link-color-hover: var(--cc-accent-hover);
+  --link-decoration: underline;
+  --link-decoration-hover: underline;
+  --link-decoration-thickness: 1px;
+  --link-external-color: var(--cc-accent);
+  --link-external-color-hover: var(--cc-accent-hover);
+  --link-external-decoration: underline;
+  --link-unresolved-color: var(--cc-muted);
+  --link-unresolved-opacity: 1;
+  --link-unresolved-decoration-style: dashed;
+  --link-unresolved-decoration-color: var(--cc-line-strong);
+
+  --tag-color: var(--cc-accent);
+  --tag-color-hover: var(--cc-accent-hover);
+  --tag-background: color-mix(in srgb, var(--cc-accent) 9%, transparent);
+  --tag-background-hover: color-mix(
+    in srgb,
+    var(--cc-accent) 16%,
+    transparent
+  );
+  --tag-border-color: transparent;
+  --tag-border-color-hover: transparent;
+  --tag-border-width: 0;
+  --tag-radius: 3px;
+  --tag-padding-x: 0.45em;
+  --tag-padding-y: 0.12em;
+  --tag-size: 0.78em;
+
+  --list-marker-color: color-mix(in srgb, var(--cc-accent) 70%, var(--cc-ink));
+  --list-marker-color-hover: var(--cc-accent);
+  --list-marker-color-collapsed: var(--cc-faint);
+  --list-indent: 1.8em;
+  --list-spacing: 0.16em;
+  --list-bullet-size: 5px;
+  --list-bullet-radius: 1px;
+
+  --blockquote-border-color: color-mix(
+    in srgb,
+    var(--cc-accent) 70%,
+    transparent
+  );
+  --blockquote-border-thickness: 2px;
+  --blockquote-background-color: color-mix(
+    in srgb,
+    var(--cc-accent) 4.5%,
+    transparent
+  );
+  --blockquote-color: var(--cc-ink-2);
+  --blockquote-font-style: normal;
+
+  --hr-color: color-mix(in srgb, var(--cc-accent) 45%, transparent);
+  --hr-thickness: 2px;
+
+  --code-background: var(--cc-code-bg);
+  --code-normal: var(--cc-ink-2);
+  --code-size: 0.86em;
+  --code-border-width: 1px;
+  --code-border-color: var(--cc-line);
+  --code-radius: 4px;
+  --code-comment: var(--cc-syn-comment);
+  --code-function: var(--cc-syn-function);
+  --code-important: var(--cc-accent);
+  --code-keyword: var(--cc-syn-keyword);
+  --code-operator: var(--cc-syn-operator);
+  --code-property: var(--cc-syn-property);
+  --code-punctuation: var(--cc-syn-operator);
+  --code-string: var(--cc-syn-string);
+  --code-tag: var(--cc-syn-tag);
+  --code-value: var(--cc-syn-number);
+
+  --table-background: transparent;
+  --table-border-width: 0;
+  --table-border-color: var(--cc-line);
+  --table-header-background: var(--cc-bg-alt);
+  --table-header-background-hover: var(--cc-bg-alt);
+  --table-header-border-width: 0;
+  --table-header-border-color: transparent;
+  --table-header-font: var(--font-monospace);
+  --table-header-size: 0.72em;
+  --table-header-weight: 600;
+  --table-header-color: var(--cc-muted);
+  --table-line-height: 1.5;
+  --table-text-size: 0.95em;
+  --table-text-color: var(--cc-ink-2);
+  --table-column-min-width: 6ch;
+  --table-column-alt-background: transparent;
+  --table-column-first-border-width: 0;
+  --table-column-last-border-width: 0;
+  --table-row-background-hover: color-mix(
+    in srgb,
+    var(--cc-ink) 3.5%,
+    transparent
+  );
+  --table-row-alt-background: transparent;
+  --table-row-alt-background-hover: color-mix(
+    in srgb,
+    var(--cc-ink) 3.5%,
+    transparent
+  );
+  --table-row-last-border-width: 1px;
+  --table-selection: var(--cc-selection);
+  --table-selection-border-color: var(--cc-accent);
+  --table-text-selection: var(--cc-selection);
+  --table-cell-vertical-alignment: top;
+  --table-cell-padding-x: 14px;
+  --table-cell-padding-y: 8px;
+
+  --checkbox-size: 16px;
+  --checkbox-radius: 3px;
+  --checkbox-border-color: var(--cc-line-strong);
+  --checkbox-border-color-hover: var(--cc-accent);
+  --checkbox-color: var(--cc-accent);
+  --checkbox-color-hover: var(--cc-accent-hover);
+  --checkbox-marker-color: var(--cc-on-accent);
+  --checklist-done-color: var(--cc-faint);
+  --checklist-done-decoration: line-through;
+  --toggle-thumb-color: #fffdf8;
+
+  --embed-background: var(--cc-bg-alt);
+  --embed-border-left: 2px solid var(--cc-line-strong);
+  --embed-border-start: 2px solid var(--cc-line-strong);
+  --embed-padding: 8px 16px;
+  --embed-radius: 0 4px 4px 0;
+
+  --callout-border-width: 1px;
+  --callout-border-opacity: 1;
+  --callout-padding: 14px 18px;
+  --callout-radius: 4px;
+  --callout-blend-mode: normal;
+  --callout-title-size: 0.8em;
+  --callout-title-weight: 600;
+  --callout-content-padding: 9px 0 0;
+  --callout-content-background: transparent;
+  --callout-tip: var(--color-green);
+  --callout-success: var(--color-green);
+  --callout-warning: var(--color-yellow);
+  --callout-question: var(--color-orange);
+  --callout-quote: var(--cc-accent);
+
+  --input-radius: var(--radius-s);
+  --input-border-color: var(--cc-line-strong);
+  --input-background: var(--cc-bg-alt);
+  --input-font-size: 0.9em;
+  --input-height: 32px;
+
+  --modal-background: var(--cc-bg);
+  --modal-border-color: var(--cc-line-strong);
+  --modal-border-width: 1px;
+  --modal-radius: 6px;
+  --modal-community-sidebar-width: 240px;
+
+  /* App chrome */
+  --ribbon-background: var(--cc-bg-side);
+  --ribbon-background-collapsed: var(--cc-bg-side);
+  --ribbon-width: 44px;
+
+  --tab-container-background: var(--cc-bg-side);
+  --tab-background-active: var(--cc-bg);
+  --tab-outline-color: var(--cc-line);
+  --tab-outline-width: 1px;
+  --tab-divider-color: var(--cc-line);
+  --tab-text-color: var(--cc-muted);
+  --tab-text-color-active: var(--cc-ink);
+  --tab-text-color-focused: var(--cc-muted);
+  --tab-text-color-focused-active: var(--cc-ink);
+  --tab-text-color-focused-highlighted: var(--cc-accent);
+  --tab-text-color-focused-active-current: var(--cc-ink);
+  --tab-font-size: 12px;
+  --tab-font-weight: 500;
+  --tab-radius: 0;
+  --tab-radius-active: 0;
+  --tab-curve: 0;
+
+  --titlebar-background: var(--cc-bg-side);
+  --titlebar-background-focused: var(--cc-bg-side);
+  --titlebar-text-color: var(--cc-muted);
+  --titlebar-text-color-focused: var(--cc-ink);
+  --titlebar-text-weight: 500;
+
+  --nav-item-color: var(--cc-ink-2);
+  --nav-item-color-hover: var(--cc-ink);
+  --nav-item-color-active: var(--cc-ink);
+  --nav-item-color-selected: var(--cc-ink);
+  --nav-item-color-highlighted: var(--cc-accent);
+  --nav-item-background-hover: color-mix(
+    in srgb,
+    var(--cc-ink) 5%,
+    transparent
+  );
+  --nav-item-background-active: var(--cc-accent-wash);
+  --nav-item-background-selected: color-mix(
+    in srgb,
+    var(--cc-accent) 13%,
+    transparent
+  );
+  --nav-item-radius: 4px;
+  --nav-item-size: 13px;
+  --nav-item-padding: 4px 8px;
+  --nav-collapse-icon-color: var(--cc-faint);
+  --nav-collapse-icon-color-collapsed: var(--cc-faint);
+  --nav-heading-color: var(--cc-muted);
+  --nav-heading-color-hover: var(--cc-ink);
+  --nav-heading-weight: 600;
+  --nav-tag-color: var(--cc-accent);
+  --nav-tag-color-hover: var(--cc-accent-hover);
+
+  --vault-name-color: var(--cc-ink);
+  --vault-name-font-size: 12px;
+  --vault-name-font-weight: 600;
+
+  --status-bar-background: var(--cc-bg-side);
+  --status-bar-border-color: var(--cc-line);
+  --status-bar-text-color: var(--cc-muted);
+  --status-bar-font-size: 10.5px;
+
+  --metadata-background: transparent;
+  --metadata-border-color: var(--cc-line);
+  --metadata-divider-color: var(--cc-line);
+  --metadata-label-text-color: var(--cc-muted);
+  --metadata-label-text-color-hover: var(--cc-ink);
+  --metadata-value-text-color: var(--cc-ink-2);
+  --metadata-radius: 3px;
+
+  --graph-node: var(--cc-accent);
+  --graph-node-focused: var(--cc-accent-bright);
+  --graph-node-unresolved: var(--cc-faint);
+  --graph-line: var(--cc-line-strong);
+  --graph-text: var(--cc-muted);
+  --graph-node-tag: var(--color-purple);
+  --graph-node-attachment: var(--color-yellow);
+
+  --canvas-background: var(--cc-bg-alt);
+  --canvas-dot-pattern: var(--cc-line-strong);
+  --canvas-color: var(--cc-ink-2);
+  --canvas-color-1: var(--color-red);
+  --canvas-color-2: var(--cc-accent);
+  --canvas-color-3: var(--color-yellow);
+  --canvas-color-4: var(--color-green);
+  --canvas-color-5: var(--color-blue);
+  --canvas-color-6: var(--color-purple);
+  --canvas-card-label-color: var(--cc-muted);
+}
+
+/* --------------------------------------------------------------------------
+   4. Type
+   -------------------------------------------------------------------------- */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.markdown-rendered p,
+.markdown-rendered li {
+  text-wrap: pretty;
+}
+
+.markdown-rendered h1,
+.markdown-rendered h2,
+.markdown-rendered h3,
+.markdown-rendered h4,
+.markdown-rendered h5,
+.markdown-rendered h6,
+.markdown-preview-view h1,
+.markdown-preview-view h2,
+.markdown-preview-view h3,
+.markdown-preview-view h4,
+.markdown-preview-view h5,
+.markdown-preview-view h6 {
+  text-wrap: balance;
+}
+
+.markdown-rendered h1,
+.markdown-preview-view h1 {
+  font-family: var(--cc-serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 1.8em 0 0.55em;
+}
+
+.markdown-rendered h2,
+.markdown-preview-view h2 {
+  font-family: var(--cc-serif);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  margin: 1.9em 0 0.5em;
+}
+
+/* H2 section marker: a short terracotta rule under the heading, in reading
+   view and live preview alike. */
+.markdown-rendered h2::after,
+.markdown-preview-view h2::after {
+  content: "";
+  display: block;
+  width: 1.6em;
+  height: 2px;
+  margin-top: 0.42em;
+  background: var(--cc-accent);
+}
+
+.cm-s-obsidian .HyperMD-header-2::after {
+  content: "";
+  display: block;
+  width: 1.6em;
+  height: 2px;
+  margin-top: 0.35em;
+  background: var(--cc-accent);
+}
+
+.markdown-rendered h3,
+.markdown-preview-view h3 {
+  font-family: var(--cc-sans);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 1.7em 0 0.45em;
+}
+
+.markdown-rendered h4,
+.markdown-preview-view h4 {
+  font-family: var(--cc-sans);
+  margin: 1.5em 0 0.4em;
+}
+
+.markdown-rendered h5,
+.markdown-preview-view h5 {
+  font-family: var(--cc-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 1.6em 0 0.4em;
+}
+
+.markdown-rendered h6,
+.markdown-preview-view h6 {
+  font-family: var(--cc-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8em;
+  margin: 1.6em 0 0.4em;
+}
+
+.markdown-rendered h1:first-child,
+.markdown-rendered h2:first-child,
+.markdown-rendered h3:first-child,
+.markdown-preview-view h1:first-child {
+  margin-top: 0;
+}
+
+.cm-s-obsidian .HyperMD-header-1,
+.cm-s-obsidian .HyperMD-header-2 {
+  font-family: var(--cc-serif);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.cm-s-obsidian .HyperMD-header-3,
+.cm-s-obsidian .HyperMD-header-4 {
+  font-weight: 600;
+}
+
+.cm-s-obsidian .HyperMD-header-5 {
+  letter-spacing: 0.05em;
+}
+
+.cm-s-obsidian .HyperMD-header-6 {
+  font-family: var(--cc-mono);
+  letter-spacing: 0.06em;
+}
+
+.inline-title {
+  font-family: var(--cc-serif);
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  color: var(--cc-ink);
+}
+
+.markdown-rendered strong,
+.markdown-preview-view strong {
+  font-weight: 600;
+  color: var(--cc-ink);
+}
+
+/* --------------------------------------------------------------------------
+   5. Links, tags, marks
+   -------------------------------------------------------------------------- */
+
+.markdown-rendered a.internal-link,
+.markdown-preview-view a.internal-link,
+.markdown-rendered a.external-link,
+.cm-s-obsidian .cm-hmd-internal-link,
+.cm-s-obsidian .cm-link {
+  color: var(--cc-accent);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2.5px;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--cc-accent) 35%,
+    transparent
+  );
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+.markdown-rendered a.internal-link:hover,
+.markdown-preview-view a.internal-link:hover,
+.markdown-rendered a.external-link:hover,
+.cm-s-obsidian .cm-hmd-internal-link:hover {
+  color: var(--cc-accent-hover);
+  text-decoration-color: currentColor;
+}
+
+.markdown-rendered a.internal-link.is-unresolved,
+.cm-s-obsidian .is-unresolved {
+  color: var(--cc-muted);
+  text-decoration-style: dashed;
+  text-decoration-color: var(--cc-line-strong);
+  opacity: 1;
+}
+
+.cm-s-obsidian .cm-url {
+  color: var(--cc-faint);
+}
+
+.cm-s-obsidian .cm-hashtag,
+.cm-s-obsidian .cm-hashtag-begin,
+.cm-s-obsidian .cm-hashtag-end {
+  color: var(--cc-accent);
+  font-family: var(--cc-mono);
+  font-size: 0.9em;
+}
+
+.tag,
+.cm-s-obsidian .cm-hashtag {
+  font-family: var(--cc-mono);
+  letter-spacing: 0.01em;
+}
+
+.markdown-rendered a.tag,
+.markdown-preview-view a.tag {
+  display: inline-block;
+  color: var(--tag-color);
+  background: var(--tag-background);
+  border: none;
+  border-radius: var(--tag-radius);
+  padding: var(--tag-padding-y) var(--tag-padding-x);
+  font-family: var(--cc-mono);
+  font-size: var(--tag-size);
+  font-weight: 500;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.markdown-rendered a.tag:hover,
+.markdown-preview-view a.tag:hover {
+  color: var(--tag-color-hover);
+  background: var(--tag-background-hover);
+  text-decoration: none;
+}
+
+.markdown-rendered .footnote-link,
+.markdown-preview-view .footnote-link {
+  color: var(--cc-accent);
+  font-family: var(--cc-mono);
+  font-size: 0.8em;
+  text-decoration: none;
+  padding: 0 0.15em;
+}
+
+.markdown-rendered .footnote-link:hover {
+  text-decoration: underline;
+}
+
+.markdown-rendered mark {
+  background: var(--cc-highlight);
+  color: inherit;
+  padding: 0.05em 0.15em;
+  border-radius: 2px;
+}
+
+.markdown-rendered kbd {
+  font-family: var(--cc-mono);
+  font-size: 0.78em;
+  background: var(--cc-bg-alt);
+  color: var(--cc-ink-2);
+  border: 1px solid var(--cc-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0.12em 0.42em;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   6. Lists and tasks
+   -------------------------------------------------------------------------- */
+
+.markdown-rendered ul > li::marker,
+.markdown-rendered ol > li::marker {
+  color: color-mix(in srgb, var(--cc-accent) 65%, var(--cc-ink));
+}
+
+.markdown-rendered ol > li::marker {
+  font-family: var(--cc-mono);
+  font-size: 0.85em;
+  color: var(--cc-muted);
+}
+
+.markdown-rendered li.task-list-item {
+  list-style: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Quotes, rules, embeds
+   -------------------------------------------------------------------------- */
+
+.markdown-rendered blockquote,
+.markdown-preview-view blockquote {
+  border-inline-start: 2px solid
+    color-mix(in srgb, var(--cc-accent) 65%, transparent);
+  background: color-mix(in srgb, var(--cc-accent) 4.5%, transparent);
+  border-radius: 0 4px 4px 0;
+  padding: 12px 18px;
+  margin: 1.5em 0;
+  color: var(--cc-ink-2);
+  font-style: normal;
+}
+
+.markdown-rendered blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  background: color-mix(in srgb, var(--cc-accent) 3.5%, transparent);
+}
+
+.markdown-rendered hr,
+.markdown-preview-view hr,
+.markdown-source-view hr {
+  border: none;
+  width: 44px;
+  height: 2px;
+  margin: 2.6em auto;
+  background: color-mix(in srgb, var(--cc-accent) 55%, transparent);
+  border-radius: 2px;
+}
+
+.markdown-rendered .markdown-embed {
+  border-inline-start: 2px solid var(--cc-line-strong);
+  background: var(--cc-bg-alt);
+  border-radius: 0 4px 4px 0;
+  padding: 8px 16px;
+}
+
+.markdown-embed-title {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cc-muted);
+}
+
+.markdown-rendered img {
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--cc-line);
+}
+
+.markdown-rendered .footnotes {
+  border-top: 1px solid var(--cc-line);
+  margin-top: 2.5em;
+  padding-top: 1em;
+  font-size: 0.9em;
+  color: var(--cc-muted);
+}
+
+.markdown-rendered .footnote-backref {
+  color: var(--cc-accent);
+  text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   8. Code
+   -------------------------------------------------------------------------- */
+
+.markdown-rendered pre,
+.markdown-preview-view pre {
+  background: var(--cc-code-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--radius-m);
+  padding: 16px 18px;
+  position: relative;
+  line-height: 1.65;
+}
+
+.markdown-rendered pre code,
+.markdown-preview-view pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--cc-ink-2);
+  font-size: 0.86em;
+  line-height: 1.65;
+}
+
+.markdown-rendered :not(pre) > code,
+.markdown-preview-view :not(pre) > code,
+.cm-s-obsidian .cm-inline-code {
+  font-family: var(--cc-mono);
+  font-size: 0.86em;
+  color: var(--cc-inline-code);
+  background: var(--cc-code-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: 3px;
+  padding: 0.1em 0.36em;
+}
+
+.markdown-rendered .copy-code-button {
+  font-family: var(--cc-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--cc-muted);
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: 3px;
+  padding: 3px 6px;
+  top: 8px;
+  right: 8px;
+}
+
+.markdown-rendered .copy-code-button:hover {
+  color: var(--cc-accent);
+  border-color: var(--cc-accent);
+}
+
+.cm-s-obsidian .HyperMD-codeblock {
+  background: var(--cc-code-bg);
+  font-size: 0.86em;
+  line-height: 1.65;
+}
+
+.cm-s-obsidian .cm-formatting-code-block {
+  color: var(--cc-faint);
+}
+
+/* Syntax — reading view (Prism) */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--cc-syn-comment);
+  font-style: italic;
+}
+.token.keyword,
+.token.boolean,
+.token.atrule,
+.token.important {
+  color: var(--cc-syn-keyword);
+}
+.token.string,
+.token.char,
+.token.attr-value,
+.token.regex {
+  color: var(--cc-syn-string);
+}
+.token.number,
+.token.constant,
+.token.symbol {
+  color: var(--cc-syn-number);
+}
+.token.function,
+.token.class-name {
+  color: var(--cc-syn-function);
+}
+.token.property,
+.token.attr-name,
+.token.variable {
+  color: var(--cc-syn-property);
+}
+.token.operator,
+.token.punctuation {
+  color: var(--cc-syn-operator);
+}
+.token.tag,
+.token.selector {
+  color: var(--cc-syn-tag);
+}
+
+/* Syntax — live preview (CodeMirror) */
+.cm-s-obsidian .cm-comment {
+  color: var(--cc-syn-comment);
+  font-style: italic;
+}
+.cm-s-obsidian .cm-keyword,
+.cm-s-obsidian .cm-atom,
+.cm-s-obsidian .cm-builtin {
+  color: var(--cc-syn-keyword);
+}
+.cm-s-obsidian .cm-string,
+.cm-s-obsidian .cm-string-2 {
+  color: var(--cc-syn-string);
+}
+.cm-s-obsidian .cm-number {
+  color: var(--cc-syn-number);
+}
+.cm-s-obsidian .cm-def,
+.cm-s-obsidian .cm-variable-2 {
+  color: var(--cc-syn-function);
+}
+.cm-s-obsidian .cm-variable,
+.cm-s-obsidian .cm-property,
+.cm-s-obsidian .cm-attribute {
+  color: var(--cc-syn-property);
+}
+.cm-s-obsidian .cm-operator,
+.cm-s-obsidian .cm-punctuation {
+  color: var(--cc-syn-operator);
+}
+.cm-s-obsidian .cm-tag,
+.cm-s-obsidian .cm-meta {
+  color: var(--cc-syn-tag);
+}
+
+/* --------------------------------------------------------------------------
+   9. Tables
+   -------------------------------------------------------------------------- */
+
+.markdown-rendered table {
+  border: none;
+  border-collapse: collapse;
+  border-radius: 0;
+}
+
+.markdown-rendered th {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+  color: var(--cc-muted);
+  background: var(--cc-bg-alt);
+  border: none;
+  border-bottom: 1px solid var(--cc-line-strong);
+  padding: 8px 14px;
+}
+
+.markdown-rendered td {
+  border: none;
+  border-bottom: 1px solid var(--cc-line);
+  padding: 9px 14px;
+  vertical-align: top;
+}
+
+.markdown-rendered tbody tr:last-child td {
+  border-bottom: 1px solid var(--cc-line-strong);
+}
+
+.markdown-rendered tbody tr:hover {
+  background: color-mix(in srgb, var(--cc-ink) 3%, transparent);
+}
+
+.markdown-rendered .table-wrapper {
+  border: none;
+  border-radius: 0;
+}
+
+/* --------------------------------------------------------------------------
+   10. Callouts
+   -------------------------------------------------------------------------- */
+
+.callout {
+  background: color-mix(in srgb, var(--callout-color) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--callout-color) 26%, transparent);
+  border-radius: 4px;
+  padding: 14px 18px;
+  mix-blend-mode: normal;
+}
+
+.callout-title {
+  gap: 8px;
+  padding: 0;
+  color: var(--callout-color);
+}
+
+.callout-title-inner {
+  font-family: var(--cc-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.callout-icon {
+  --icon-size: 15px;
+}
+
+.callout-content {
+  padding: 9px 0 0;
+}
+
+.callout-content > :first-child {
+  margin-top: 0;
+}
+
+.callout-content > :last-child {
+  margin-bottom: 0;
+}
+
+.callout.is-collapsed {
+  padding-bottom: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   11. Properties / frontmatter
+   -------------------------------------------------------------------------- */
+
+.metadata-container {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--cc-line);
+  padding: 2px 0 12px;
+  margin-bottom: 1.4em;
+}
+
+.metadata-property {
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+
+.metadata-property:hover {
+  background: color-mix(in srgb, var(--cc-ink) 3.5%, transparent);
+}
+
+.metadata-property-key {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  letter-spacing: 0.02em;
+  color: var(--cc-muted);
+}
+
+.metadata-property-value {
+  font-size: 0.9em;
+  color: var(--cc-ink-2);
+}
+
+.metadata-property input,
+.metadata-property textarea,
+.metadata-property select {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.metadata-property input:focus {
+  box-shadow: none;
+}
+
+.metadata-property-icon {
+  color: var(--cc-faint);
+}
+
+.metadata-property .multi-select-pill {
+  background: var(--cc-accent-wash);
+  border: none;
+  border-radius: 3px;
+  color: var(--cc-accent);
+  font-family: var(--cc-mono);
+  font-size: 0.78em;
+  padding: 1px 6px;
+}
+
+.metadata-add-button {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  color: var(--cc-faint);
+}
+
+.metadata-add-button:hover {
+  color: var(--cc-accent);
+}
+
+/* --------------------------------------------------------------------------
+   12. Editor / CodeMirror
+   -------------------------------------------------------------------------- */
+
+body {
+  --file-line-width: 44rem;
+  --caret-color: var(--cc-accent);
+}
+
+.cm-s-obsidian .cm-cursor,
+.cm-s-obsidian .cm-dropCursor {
+  border-left: 2px solid var(--cc-accent) !important;
+}
+
+.cm-s-obsidian .cm-selectionBackground,
+.cm-s-obsidian .cm-content ::selection {
+  background: var(--cc-selection) !important;
+}
+
+.cm-s-obsidian .cm-selectionMatch {
+  background: color-mix(in srgb, var(--cc-accent) 14%, transparent);
+  border-radius: 2px;
+}
+
+.cm-s-obsidian .cm-searchMatch {
+  background: color-mix(in srgb, var(--color-yellow) 26%, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--color-yellow) 45%, transparent);
+}
+
+.cm-s-obsidian .cm-searchMatch.cm-searchMatch-selected {
+  background: color-mix(in srgb, var(--color-yellow) 45%, transparent);
+}
+
+.markdown-source-view.mod-cm6 .cm-gutters {
+  background: transparent;
+  border-right: none;
+  color: var(--cc-faint);
+}
+
+.markdown-source-view.mod-cm6 .cm-lineNumbers .cm-gutterElement {
+  font-family: var(--cc-mono);
+  font-size: 10px;
+  opacity: 0.5;
+  padding-right: 10px;
+}
+
+.markdown-source-view.mod-cm6 .cm-foldGutter .cm-gutterElement {
+  color: var(--cc-faint);
+}
+
+.markdown-source-view.mod-cm6 .cm-active.cm-line {
+  background: color-mix(in srgb, var(--cc-accent) 3.5%, transparent);
+}
+
+.cm-s-obsidian .cm-formatting {
+  color: var(--cc-faint);
+}
+
+.cm-s-obsidian .cm-formatting-header {
+  color: color-mix(in srgb, var(--cc-accent) 45%, var(--cc-faint));
+}
+
+.cm-s-obsidian .cm-blockid {
+  font-family: var(--cc-mono);
+  font-size: 0.7em;
+  color: var(--cc-faint);
+}
+
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-table-row {
+  font-size: 0.95em;
+}
+
+/* --------------------------------------------------------------------------
+   13. App chrome — ribbon, sidebar, tabs
+   -------------------------------------------------------------------------- */
+
+.app-container,
+body {
+  background-color: var(--cc-bg-side);
+}
+
+.workspace-ribbon {
+  background: var(--cc-bg-side);
+  border-right: 1px solid var(--cc-line);
+}
+
+.workspace-ribbon.mod-left.is-collapsed {
+  border-right-color: transparent;
+}
+
+.side-dock-ribbon-action {
+  color: var(--cc-muted);
+  border-radius: 4px;
+}
+
+.side-dock-ribbon-action:hover {
+  color: var(--cc-accent);
+  background: var(--cc-accent-wash);
+}
+
+.workspace-tab-header-container {
+  border-bottom: 1px solid var(--cc-line);
+}
+
+.workspace-tab-header {
+  font-family: var(--cc-mono);
+}
+
+.workspace-tab-header.is-active {
+  box-shadow: inset 0 2px 0 var(--cc-accent);
+}
+
+.workspace-tab-header-inner-title {
+  font-family: var(--cc-mono);
+  letter-spacing: -0.01em;
+}
+
+.workspace-tab-header-inner-close-button {
+  color: var(--cc-faint);
+  border-radius: 3px;
+}
+
+.workspace-tab-header-inner-close-button:hover {
+  background: var(--cc-bg-active);
+  color: var(--cc-ink);
+}
+
+.workspace-leaf-resize-handle:hover {
+  background: color-mix(in srgb, var(--cc-accent) 40%, transparent);
+}
+
+.view-header {
+  background: var(--cc-bg);
+  border-bottom: 1px solid var(--cc-line);
+  height: 38px;
+}
+
+/* The whole header line — parent path, separator and current file — shares one
+   type size, so hierarchy comes from colour only, never from a second size. */
+.view-header-title-container {
+  font-family: var(--cc-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.view-header-title,
+.view-header-breadcrumb,
+.view-header-breadcrumb-separator {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: 1.35;
+}
+
+.view-header-title {
+  color: var(--cc-muted);
+}
+
+.view-header-title-parent,
+.view-header-breadcrumb,
+.view-header-breadcrumb-separator {
+  color: var(--cc-faint);
+}
+
+.view-actions .clickable-icon {
+  color: var(--cc-muted);
+}
+
+/* File explorer */
+.nav-files-container {
+  padding: 4px 8px 14px;
+}
+
+.nav-file-title,
+.nav-folder-title {
+  border-radius: 4px;
+}
+
+.nav-file-title.is-active {
+  background: var(--cc-accent-wash);
+}
+
+.nav-file-title.is-active .nav-file-title-content {
+  color: var(--cc-ink);
+}
+
+.nav-folder.mod-root > .nav-folder-title .nav-folder-title-content {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--cc-muted);
+}
+
+.nav-folder.mod-root > .nav-folder-title:hover .nav-folder-title-content {
+  color: var(--cc-ink);
+}
+
+.nav-folder-children {
+  border-left-color: var(--cc-line);
+}
+
+/* Status bar */
+.status-bar {
+  font-family: var(--cc-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  height: 26px;
+  padding: 0 12px;
+  border-top: 1px solid var(--cc-line);
+}
+
+.status-bar::after {
+  content: "✻";
+  color: var(--cc-accent);
+  font-family: var(--cc-mono);
+  font-size: 12px;
+  line-height: 1;
+  margin-left: 10px;
+  opacity: 0.9;
+}
+
+.status-bar-item:hover {
+  color: var(--cc-ink);
+}
+
+/* --------------------------------------------------------------------------
+   14. Modals, menus, command palette
+   -------------------------------------------------------------------------- */
+
+.modal {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow-pop);
+}
+
+.modal-bg {
+  background: var(--cc-cover);
+  backdrop-filter: blur(2px);
+}
+
+.modal-title {
+  font-family: var(--cc-serif);
+  font-size: 1.35em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.modal-close-button {
+  color: var(--cc-faint);
+  border-radius: 4px;
+}
+
+.modal-close-button:hover {
+  color: var(--cc-ink);
+  background: var(--cc-bg-active);
+}
+
+.prompt {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow-pop);
+  width: min(680px, 92vw);
+}
+
+.prompt-input {
+  font-family: var(--cc-mono);
+  font-size: 0.95em;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--cc-line);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 15px 18px;
+  color: var(--cc-ink);
+}
+
+.prompt-input::placeholder {
+  color: var(--cc-faint);
+}
+
+.prompt-results {
+  padding: 6px 0;
+}
+
+.suggestion-item {
+  border-radius: 4px;
+  margin: 1px 6px;
+  padding: 7px 12px;
+}
+
+.suggestion-item.is-selected {
+  background: var(--cc-accent-wash);
+  color: var(--cc-ink);
+}
+
+.suggestion-item.is-selected .suggestion-note {
+  color: var(--cc-muted);
+}
+
+.suggestion-note {
+  font-family: var(--cc-mono);
+  font-size: 0.72em;
+  color: var(--cc-faint);
+}
+
+.suggestion-highlight {
+  color: var(--cc-accent);
+  font-weight: 600;
+}
+
+.prompt-instructions {
+  border-top: 1px solid var(--cc-line);
+  padding: 8px 14px;
+  font-family: var(--cc-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cc-faint);
+}
+
+.prompt-instruction-command {
+  font-family: var(--cc-mono);
+  color: var(--cc-muted);
+}
+
+.suggestion-container {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow-pop);
+}
+
+.menu {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow-pop);
+  padding: 4px;
+}
+
+.menu-item {
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.menu-item.selected,
+.menu-item:hover {
+  background: var(--cc-accent-wash);
+  color: var(--cc-ink);
+}
+
+.menu-separator {
+  border-color: var(--cc-line);
+}
+
+.menu-item-icon {
+  color: var(--cc-faint);
+}
+
+/* --------------------------------------------------------------------------
+   15. Forms, settings
+   -------------------------------------------------------------------------- */
+
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  background: var(--cc-bg-alt);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: var(--radius-s);
+  color: var(--cc-ink);
+  font-size: 0.9em;
+  box-shadow: none;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--cc-accent);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--cc-accent) 16%, transparent);
+  outline: none;
+}
+
+button {
+  border-radius: var(--radius-s);
+}
+
+button.mod-cta {
+  background: var(--cc-accent);
+  border: 1px solid var(--cc-accent);
+  color: var(--cc-on-accent);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+button.mod-cta:hover {
+  background: var(--cc-accent-hover);
+  border-color: var(--cc-accent-hover);
+}
+
+button.mod-warning {
+  background: var(--cc-error);
+  border-color: var(--cc-error);
+  color: var(--cc-on-accent);
+}
+
+.checkbox-container {
+  background: var(--cc-bg-active);
+  box-shadow: inset 0 0 0 1px var(--cc-line-strong);
+  border-radius: 999px;
+}
+
+.checkbox-container.is-enabled {
+  background: var(--cc-accent);
+  box-shadow: none;
+}
+
+.vertical-tab-header {
+  background: var(--cc-bg-side);
+  border-right: 1px solid var(--cc-line);
+}
+
+.vertical-tab-header-group-title {
+  font-family: var(--cc-mono);
+  font-size: 0.68em;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--cc-faint);
+}
+
+.vertical-tab-nav-item {
+  border-radius: 4px;
+  margin: 1px 6px;
+}
+
+.vertical-tab-nav-item.is-active {
+  background: var(--cc-accent-wash);
+  color: var(--cc-ink);
+}
+
+.setting-item {
+  border-top: 1px solid var(--cc-line);
+}
+
+.setting-item-name {
+  font-size: 0.92em;
+  font-weight: 500;
+  color: var(--cc-ink);
+}
+
+.setting-item-description {
+  font-size: 0.78em;
+  color: var(--cc-muted);
+}
+
+.setting-item-heading .setting-item-name {
+  font-size: 1em;
+  letter-spacing: 0.01em;
+}
+
+.setting-item-heading .setting-item-description {
+  color: var(--cc-faint);
+}
+
+.slider-thumb {
+  background: var(--cc-accent);
+}
+
+.clickable-icon {
+  color: var(--cc-muted);
+  border-radius: 4px;
+}
+
+.clickable-icon:hover {
+  color: var(--cc-ink);
+  background: var(--background-modifier-hover);
+}
+
+.clickable-icon.is-active {
+  color: var(--cc-accent);
+}
+
+/* Search */
+.search-result-file-title {
+  font-family: var(--cc-mono);
+  font-size: 0.74em;
+  color: var(--cc-muted);
+}
+
+.search-result-file-matched-text {
+  background: var(--cc-highlight);
+  color: var(--cc-ink);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.search-result-file-match:hover {
+  background: var(--background-modifier-hover);
+}
+
+.search-input-clear-button {
+  color: var(--cc-faint);
+}
+
+/* Hover popover, tooltip */
+.popover.hover-popover {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line-strong);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow-pop);
+}
+
+.tooltip {
+  background: var(--cc-ink);
+  color: var(--cc-bg);
+  font-family: var(--cc-mono);
+  font-size: 0.7em;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+  padding: 4px 7px;
+}
+
+/* --------------------------------------------------------------------------
+   16. Graph, canvas, scrollbars, focus
+   -------------------------------------------------------------------------- */
+
+.graph-view {
+  background: var(--cc-bg);
+}
+
+.graph-controls {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow);
+}
+
+.graph-controls .setting-item {
+  border-top-color: var(--cc-line);
+}
+
+.canvas-node {
+  border-radius: 6px;
+  box-shadow: var(--cc-shadow);
+}
+
+.canvas-node-content {
+  background: var(--cc-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: 6px;
+}
+
+.canvas-node.is-focused .canvas-node-content {
+  border-color: var(--cc-accent);
+  box-shadow: 0 0 0 1px var(--cc-accent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--cc-ink) 16%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--cc-accent) 55%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--cc-accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+::selection {
+  background: var(--cc-selection);
+  color: var(--cc-ink);
+}
+
+/* --------------------------------------------------------------------------
+   17. Print
+   -------------------------------------------------------------------------- */
+
+@media print {
+  body {
+    --background-primary: #ffffff;
+    --text-normal: #1f1e1d;
+  }
+
+  .markdown-rendered pre {
+    border-color: #d8d4c8;
+  }
+}

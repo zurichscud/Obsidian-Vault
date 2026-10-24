@@ -1,3 +1,8 @@
 {
-  "theme": "obsidian"
+  "theme": "system",
+  "cssTheme": "Claude Code",
+  "translucency": false,
+  "showViewHeader": true,
+  "showRibbon": true,
+  "nativeMenus": false
 }
