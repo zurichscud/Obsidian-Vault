@@ -421,7 +421,7 @@ body {
   --table-header-background-hover: var(--cc-bg-alt);
   --table-header-border-width: 0;
   --table-header-border-color: transparent;
-  --table-header-font: var(--font-monospace);
+  --table-header-font: var(--cc-sans);
   --table-header-size: 0.72em;
   --table-header-weight: 600;
   --table-header-color: var(--cc-muted);
@@ -1076,7 +1076,7 @@ body {
 }
 
 .markdown-rendered th {
-  font-family: var(--cc-mono);
+  font-family: var(--cc-sans);
   font-size: 0.72em;
   font-weight: 600;
   text-transform: uppercase;
