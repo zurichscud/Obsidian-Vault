@@ -1,0 +1,11 @@
+{
+  "language": "auto",
+  "toolbarButtons": "both",
+  "enabled": false,
+  "keepActiveInView": true,
+  "collapseOthers": true,
+  "revealSubfolders": true,
+  "revealAncestors": false,
+  "expandedBefore": [],
+  "orders": {}
+}
