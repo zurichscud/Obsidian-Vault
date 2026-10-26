@@ -2,5 +2,6 @@
   "promptDelete": false,
   "showLineNumber": false,
   "spellcheck": false,
-  "attachmentFolderPath": "./asserts"
+  "attachmentFolderPath": "./asserts",
+  "alwaysUpdateLinks": true
 }

@@ -8,7 +8,7 @@ created: 2026-10-24
 
 > 好的工具应该安静：把纸、墨和一个恰当的颜色放在你面前，然后退后一步。
 
-正文使用系统无衬线字体，标题换用衬线体，界面与代码使用等宽字体。**加粗**、*斜体*、==荧光笔==、`inline code`，以及 [[HTTP缓存/HTTP缓存判断|内部链接]] 和 [外部链接](https://claude.com)。
+正文使用系统无衬线字体，标题换用衬线体，界面与代码使用等宽字体。**加粗**、*斜体*、==荧光笔==、`inline code`，以及 [[HTTP缓存判断|内部链接]] 和 [外部链接](https://claude.com)。
 
 ## 排版 · Typography
 
@@ -81,7 +81,7 @@ function shouldRevalidate(cache) {
 
 #claude #theme #排版
 
-返回 [[HTTP缓存/HTTP缓存判断|HTTP 缓存判断]]，或看看 [Claude](https://claude.com)。
+返回 [[HTTP缓存判断|HTTP 缓存判断]]，或看看 [Claude](https://claude.com)。
 
 这是一个脚注引用[^1]。
 
