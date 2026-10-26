@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1112" viewBox="0 0 1440 1112" role="img" aria-labelledby="ttl dsc">
+  <title id="ttl">Express 多级 Router 的请求链路</title>
+  <desc id="dsc">一次 GET /api/users/42 依次穿过 app 与挂载 router stack 的执行顺序，以及 next()、next('route')、next(err) 的跳转规则。</desc>
+
+  <style>
+    svg { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+    text { white-space: pre; }
+
+    .t-eyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: 2.4px; fill: #A6AEB6; }
+    .t-title   { font-size: 31px; font-weight: 600; letter-spacing: -0.3px; fill: #14181D; }
+    .t-sub     { font-size: 13.5px; fill: #646D75; }
+    .t-leg     { font-size: 11.5px; fill: #5F6870; }
+
+    .p-title { font-size: 14.5px; font-weight: 600; fill: #1B2127; }
+    .p-sub   { font-size: 11.5px; fill: #8D969E; }
+    .rowlab  { font-size: 10.5px; font-weight: 600; letter-spacing: 1.2px; fill: #A6AEB6; }
+    .foot    { font-size: 11.5px; fill: #5F6870; }
+
+    .panel { fill: #FFFFFF; stroke: #E9E9E4; stroke-width: 1; filter: url(#soft); }
+
+    .chip { stroke-width: 1; }
+    .c-app   { fill: #F8FAFB; stroke: #CFD8DF; }
+    .c-api   { fill: #FDF8F1; stroke: #E8D3B7; }
+    .c-users { fill: #F2FAF8; stroke: #BFE0D9; }
+    .c-hit   { fill: #EDF8F5; stroke: #127A6E; stroke-width: 1.6; }
+    .c-err   { fill: #FCF3F1; stroke: #E4B7AF; }
+    .c-off   { fill: #FCFCFD; stroke: #DCE1E6; stroke-dasharray: 4 3; }
+
+    .ac-app   { fill: #5C748A; }
+    .ac-api   { fill: #B26A18; }
+    .ac-users { fill: #0E7A6E; }
+    .ac-err   { fill: #B03A2E; }
+    .ac-off   { fill: #C6CDD3; }
+
+    .code      { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; fill: #1A2026; }
+    .code-off  { fill: #7E878F; }
+    .code-err  { fill: #8A3128; }
+    .idx       { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; fill: #C0C7CE; text-anchor: end; }
+
+    .tag       { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; }
+    .tag-app   { fill: #4C6479; }
+    .tag-api   { fill: #A85B12; }
+    .tag-users { fill: #0E7A6E; }
+    .tag-err   { fill: #B03A2E; }
+    .tag-off   { fill: #A9B1B8; }
+
+    .note     { font-size: 10.5px; fill: #8D969E; }
+    .note-off { fill: #AEB6BD; }
+    .note-err { fill: #A9544A; }
+
+    .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+    .node-t  { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; text-anchor: middle; fill: #2B3138; }
+    .node-s  { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 9px; text-anchor: middle; fill: #93A0AA; }
+    .node-t-off { fill: #AEB6BD; }
+
+    .kc  { fill: #F2F4F6; stroke: #E4E7EA; stroke-width: 1; }
+    .kct { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 10.5px; fill: #3D464F; }
+    .desc { font-size: 12px; fill: #4E575F; }
+  </style>
+
+  <defs>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1A2026" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+
+  <rect width="1440" height="1112" fill="#FAFAF7"/>
+
+  <!-- ===== header ===== -->
+  <text class="t-eyebrow" x="72" y="58">EXPRESS · ROUTER CHAIN</text>
+  <text class="t-title" x="72" y="100">Express 多级 Router 的请求链路</text>
+  <text class="t-sub" x="72" y="130">一次 GET /api/users/42 的 layer 遍历：沿挂载点逐层下沉，走完再逐层回退。</text>
+
+  <g>
+    <path d="M1090 72 H1112" stroke="#9AA4AE" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M1105 67 L1113 72 L1105 77" fill="none" stroke="#9AA4AE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="t-leg" x="1124" y="76">命中并执行</text>
+
+    <path d="M1090 98 H1112" stroke="#C2C9D0" stroke-width="1.5" stroke-dasharray="3.5 3" stroke-linecap="round"/>
+    <path d="M1105 93 L1113 98 L1105 103" fill="none" stroke="#C2C9D0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="t-leg" x="1124" y="102">调用 next() 才继续</text>
+
+    <path d="M1090 124 H1112" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="3.5 3" stroke-linecap="round"/>
+    <path d="M1105 119 L1113 124 L1105 129" fill="none" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="t-leg" x="1124" y="128">next(err) 直达 error handler</text>
+  </g>
+
+  <!-- ===== panel 1 ===== -->
+  <rect class="panel" x="56" y="160" width="1328" height="540" rx="16"/>
+
+  <text class="p-title" x="88" y="198">① 执行顺序</text>
+  <text class="p-sub" x="196" y="198">每个 router 有独立的 stack，layer 按注册顺序展开</text>
+
+  <rect x="1196" y="176" width="156" height="28" rx="14" fill="#F2F4F6" stroke="#E7EAED"/>
+  <text x="1274" y="194" text-anchor="middle" class="mono" font-size="11.5" fill="#4B5560">GET /api/users/42</text>
+
+  <text class="rowlab" x="112" y="226">app 级前置 · 按注册顺序</text>
+  <text class="rowlab" x="112" y="350">下沉 · 进入挂载的 router</text>
+  <text class="rowlab" x="112" y="474">回退 · 只有 next() 才会继续</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect class="chip c-app" x="112" y="236" width="278" height="64" rx="10"/>
+    <rect class="ac-app" x="113" y="250" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="376" y="253">1</text>
+    <text class="code" x="128" y="268">app.use(logger)</text>
+    <text class="tag tag-app" x="128" y="287">app</text>
+    <text class="note" x="224" y="287">访问日志</text>
+  </g>
+  <g>
+    <rect class="chip c-app" x="422" y="236" width="278" height="64" rx="10"/>
+    <rect class="ac-app" x="423" y="250" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="686" y="253">2</text>
+    <text class="code" x="438" y="268">app.use(json())</text>
+    <text class="tag tag-app" x="438" y="287">app</text>
+    <text class="note" x="534" y="287">解析 body</text>
+  </g>
+  <g>
+    <rect class="chip c-app" x="732" y="236" width="278" height="64" rx="10"/>
+    <rect class="ac-app" x="733" y="250" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="996" y="253">3</text>
+    <text class="code" x="748" y="268">app.use('/api', api)</text>
+    <text class="tag tag-app" x="748" y="287">app → api</text>
+    <text class="note" x="828" y="287">前缀匹配，下沉</text>
+  </g>
+  <g>
+    <rect class="chip c-api" x="1042" y="236" width="278" height="64" rx="10"/>
+    <rect class="ac-api" x="1043" y="250" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="1306" y="253">4</text>
+    <text class="code" x="1058" y="268">api.use(auth)</text>
+    <text class="tag tag-api" x="1058" y="287">api</text>
+    <text class="note" x="1154" y="287">校验 token，失败即 401</text>
+  </g>
+
+  <path d="M392 268 H416" stroke="#C3CAD1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M410 263 L417 268 L410 273" stroke="#C3CAD1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M702 268 H726" stroke="#C3CAD1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M720 263 L727 268 L720 273" stroke="#C3CAD1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1012 268 H1036" stroke="#C3CAD1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M1030 263 L1037 268 L1030 273" stroke="#C3CAD1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- row 2 -->
+  <g>
+    <rect class="chip c-api" x="112" y="360" width="278" height="64" rx="10"/>
+    <rect class="ac-api" x="113" y="374" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="376" y="377">5</text>
+    <text class="code" x="128" y="392">api.use('/users', users)</text>
+    <text class="tag tag-api" x="128" y="411">api → users</text>
+    <text class="note" x="224" y="411">继续下沉</text>
+  </g>
+  <g>
+    <rect class="chip c-users" x="422" y="360" width="278" height="64" rx="10"/>
+    <rect class="ac-users" x="423" y="374" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="686" y="377">6</text>
+    <text class="code" x="438" y="392">users.param('id', load)</text>
+    <text class="tag tag-users" x="438" y="411">users</text>
+    <text class="note" x="534" y="411">预取 user 到 req</text>
+  </g>
+  <g>
+    <rect class="chip c-hit" x="732" y="360" width="278" height="64" rx="10"/>
+    <rect class="ac-users" x="733" y="374" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="996" y="377" fill="#9FBEB8">7</text>
+    <text class="code" x="748" y="392">users.get('/:id', send)</text>
+    <text class="tag tag-users" x="748" y="411">users</text>
+    <text class="note" x="828" y="411">命中，res.json()</text>
+  </g>
+  <g>
+    <rect class="chip c-off" x="1042" y="360" width="278" height="64" rx="10"/>
+    <rect class="ac-off" x="1043" y="374" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="1306" y="377">8</text>
+    <text class="code code-off" x="1058" y="392">users.use(notFound)</text>
+    <text class="tag tag-off" x="1058" y="411">users</text>
+    <text class="note note-off" x="1154" y="411">栈尾，退回 api</text>
+  </g>
+
+  <path d="M392 392 H416" stroke="#C3CAD1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M410 387 L417 392 L410 397" stroke="#C3CAD1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M702 392 H726" stroke="#C3CAD1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M720 387 L727 392 L720 397" stroke="#C3CAD1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1012 392 H1036" stroke="#C9D0D7" stroke-width="1.5" stroke-dasharray="3.5 3" stroke-linecap="round" fill="none"/>
+  <path d="M1030 387 L1037 392 L1030 397" stroke="#C9D0D7" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- row 3 -->
+  <g>
+    <rect class="chip c-off" x="112" y="484" width="278" height="64" rx="10"/>
+    <rect class="ac-off" x="113" y="498" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="376" y="501">9</text>
+    <text class="code code-off" x="128" y="516">api.get('/health')</text>
+    <text class="tag tag-off" x="128" y="535">api</text>
+    <text class="note note-off" x="224" y="535">路径不匹配，跳过</text>
+  </g>
+  <g>
+    <rect class="chip c-off" x="422" y="484" width="278" height="64" rx="10"/>
+    <rect class="ac-off" x="423" y="498" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="686" y="501">10</text>
+    <text class="code code-off" x="438" y="516">api.use(notFound)</text>
+    <text class="tag tag-off" x="438" y="535">api</text>
+    <text class="note note-off" x="534" y="535">本层兜底 404</text>
+  </g>
+  <g>
+    <rect class="chip c-off" x="732" y="484" width="278" height="64" rx="10"/>
+    <rect class="ac-off" x="733" y="498" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="996" y="501">11</text>
+    <text class="code code-off" x="748" y="516">app.use(notFound)</text>
+    <text class="tag tag-off" x="748" y="535">app</text>
+    <text class="note note-off" x="828" y="535">根兜底 404</text>
+  </g>
+  <g>
+    <rect class="chip c-err" x="1042" y="484" width="278" height="64" rx="10"/>
+    <rect class="ac-err" x="1043" y="498" width="3" height="36" rx="1.5"/>
+    <text class="idx" x="1306" y="501">12</text>
+    <text class="code code-err" x="1058" y="516">app.use(errHandler)</text>
+    <text class="tag tag-err" x="1058" y="535">app · 4 参数</text>
+    <text class="note note-err" x="1154" y="535">只收 err</text>
+  </g>
+
+  <path d="M392 516 H416" stroke="#C9D0D7" stroke-width="1.5" stroke-dasharray="3.5 3" stroke-linecap="round" fill="none"/>
+  <path d="M410 511 L417 516 L410 521" stroke="#C9D0D7" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M702 516 H726" stroke="#C9D0D7" stroke-width="1.5" stroke-dasharray="3.5 3" stroke-linecap="round" fill="none"/>
+  <path d="M720 511 L727 516 L720 521" stroke="#C9D0D7" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- next(err) jump -->
+  <path d="M871 428 V444 Q871 452 879 452 H1173 Q1181 452 1181 460 V472" fill="none" stroke="#C0392B" stroke-width="1.6" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <path d="M1176 470 L1181 480 L1186 470" fill="none" stroke="#C0392B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="884" y="445" class="mono" font-size="10" fill="#B03A2E">next(err)</text>
+
+  <!-- footnote -->
+  <rect x="88" y="576" width="1264" height="84" rx="10" fill="#F8F9FA" stroke="#EDEFF1"/>
+  <text class="foot" x="112" y="601">— 本次请求在第 7 层 res.json() 结束；没有调用 next()，所以第 8–11 层不会执行。</text>
+  <text class="foot" x="112" y="623">— 若第 7 层调用 next()，则依次回退：8 users 栈尾 → 9 api 不匹配 → 10 api 404 → 11 app 404。</text>
+  <text class="foot" x="112" y="645">— 只有 next(err) 会跳过全部普通层，直接进入第 12 层的四参数 handler。</text>
+
+  <!-- ===== panel 2 ===== -->
+  <rect class="panel" x="56" y="728" width="648" height="328" rx="16"/>
+  <text class="p-title" x="88" y="768">② 挂载树</text>
+  <text class="p-sub" x="88" y="790">app 上并列挂载多个 router，只有前缀命中的那个会下沉</text>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M380 852 V868" stroke="#CFD6DC" stroke-width="1.5"/>
+    <path d="M220 868 H540" stroke="#CFD6DC" stroke-width="1.5"/>
+    <path d="M380 868 V884" stroke="#CFD6DC" stroke-width="1.5" stroke-dasharray="3.5 3"/>
+    <path d="M540 868 V884" stroke="#CFD6DC" stroke-width="1.5" stroke-dasharray="3.5 3"/>
+    <path d="M380 852 V868 H220 V882" stroke="#C08A2E" stroke-width="1.7"/>
+    <path d="M215 878 L220 886 L225 878" stroke="#C08A2E" stroke-width="1.7"/>
+    <path d="M220 926 V944" stroke="#C08A2E" stroke-width="1.7"/>
+    <path d="M215 940 L220 948 L225 940" stroke="#C08A2E" stroke-width="1.7"/>
+  </g>
+
+  <rect x="328" y="812" width="104" height="40" rx="9" fill="#F8FAFB" stroke="#CBD5DD"/>
+  <text class="node-t" x="380" y="837">app</text>
+
+  <rect x="168" y="886" width="104" height="40" rx="9" fill="#FDF8F1" stroke="#D6A85F" stroke-width="1.4"/>
+  <text class="node-t" x="220" y="911">/api</text>
+
+  <rect x="328" y="886" width="104" height="40" rx="9" fill="#FCFCFD" stroke="#DCE1E6" stroke-dasharray="4 3"/>
+  <text class="node-t node-t-off" x="380" y="911">/assets</text>
+
+  <rect x="488" y="886" width="104" height="40" rx="9" fill="#FCFCFD" stroke="#DCE1E6" stroke-dasharray="4 3"/>
+  <text class="node-t node-t-off" x="540" y="911">/admin</text>
+
+  <rect x="150" y="950" width="140" height="52" rx="9" fill="#F2FAF8" stroke="#7FC4B8" stroke-width="1.4"/>
+  <text class="node-t" x="220" y="970">/users</text>
+  <text class="node-s" x="220" y="988">param → get('/:id')</text>
+
+  <!-- ===== panel 3 ===== -->
+  <rect class="panel" x="736" y="728" width="648" height="328" rx="16"/>
+  <text class="p-title" x="768" y="768">③ 规则速查</text>
+  <text class="p-sub" x="768" y="790">挂载、前进、跳过，都由 next 的形态决定</text>
+
+  <g>
+    <rect class="kc" x="768" y="801" width="50" height="26" rx="6"/>
+    <text class="kct" x="777" y="818">mount</text>
+    <text class="desc" x="884" y="818">app.use('/api', api) 只做前缀匹配，命中才进入子 stack</text>
+
+    <rect class="kc" x="768" y="851" width="56" height="26" rx="6"/>
+    <text class="kct" x="777" y="868">next()</text>
+    <text class="desc" x="884" y="868">继续同一个 stack 的下一层；stack 走完就退回父级</text>
+
+    <rect class="kc" x="768" y="901" width="100" height="26" rx="6"/>
+    <text class="kct" x="777" y="918">next('route')</text>
+    <text class="desc" x="884" y="918">跳过本 route 剩余 handler，直接匹配下一个 route</text>
+
+    <rect class="kc" x="768" y="951" width="75" height="26" rx="6"/>
+    <text class="kct" x="777" y="968">next(err)</text>
+    <text class="desc" x="884" y="968">跳过全部普通层，直达四参数 error handler</text>
+
+    <rect class="kc" x="768" y="1001" width="94" height="26" rx="6"/>
+    <text class="kct" x="777" y="1018">finalhandler</text>
+    <text class="desc" x="884" y="1018">没人结束响应时收尾：返回 404，或把错误变成 500</text>
+  </g>
+</svg>
