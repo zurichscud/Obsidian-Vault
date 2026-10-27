@@ -1,27 +1,22 @@
-**Multer** 是 Node.js 环境中专门用于处理 `multipart/form-data` 类型表单数据的 Express/Connect 中间件，主要用于**文件上传**。
-  
+**Multer** 是 Node.js 环境中专门用于处理 `multipart/form-data` 类型表单数据的 Express 中间件，主要用于**文件上传**。
 
-### 1. 核心安装
+## 1. 安装
 
-Bash
+通过 npm 安装 `multer` 依赖：
 
-```
+```bash
 npm install multer
-# 或者
-pnpm add multer
 ```
 
-### 2. 基础配置与常用存储模式
+## 2. 基础配置与常用存储模式
 
-#### 模式 A：磁盘存储（DiskStorage，推荐）
+### 2.1 磁盘存储
 
 将文件直接写入服务器硬盘，并可自定义文件名与目录。
 
-  
+以下代码先用 `multer.diskStorage` 配置目标目录与自定义文件名（防止重名覆盖），再通过 `limits` 与 `fileFilter` 限制文件大小和允许的 MIME 类型：
 
-JavaScript
-
-```
+```javascript
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -65,32 +60,26 @@ const upload = multer({
 });
 ```
 
-#### 模式 B：内存存储（MemoryStorage）
+### 2.2 内存存储
 
-文件保存在内存中作为 `Buffer`（适用于直传 OSS/S3、计算 MD5 校验码等场景）。
+文件保存在内存中作为 `Buffer`，适用于直传 OSS/S3、计算 MD5 校验码等场景。
 
-  
+以下代码使用 `multer.memoryStorage()` 创建内存存储实例，并将文件大小限制为 10MB：
 
-JavaScript
-
-```
+```javascript
 const uploadToMemory = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 ```
 
-### 3. 常见路由接收场景
+## 3. 常见路由接收场景
 
-#### 单文件上传：`upload.single(fieldname)`
+### 3.1 单文件上传
 
-文件信息挂载在 `req.file`，普通文本字段挂载在 `req.body`。
+使用 `upload.single(fieldname)` 接收单文件：文件信息挂载在 `req.file`，普通文本字段挂载在 `req.body`。
 
-  
-
-JavaScript
-
-```
+```javascript
 app.post('/api/upload/avatar', upload.single('avatar'), (req, res) => {
   // req.file:
   // { fieldname, originalname, encoding, mimetype, destination, filename, path, size }
@@ -106,15 +95,13 @@ app.post('/api/upload/avatar', upload.single('avatar'), (req, res) => {
 });
 ```
 
-#### 多文件上传（同字段）：`upload.array(fieldname[, maxCount])`
+### 3.2 多文件上传（同字段）
 
-文件数组挂载在 `req.files`。
+使用 `upload.array(fieldname[, maxCount])` 接收同一字段下的多个文件，文件数组挂载在 `req.files`。
 
-  
+以下路由以 `photos` 字段接收最多 5 个文件，并返回每个文件的原始名称与路径：
 
-JavaScript
-
-```
+```javascript
 app.post('/api/upload/photos', upload.array('photos', 5), (req, res) => {
   res.json({
     code: 200,
@@ -123,11 +110,13 @@ app.post('/api/upload/photos', upload.array('photos', 5), (req, res) => {
 });
 ```
 
-#### 多字段组合上传：`upload.fields(fields)`
+### 3.3 多字段组合上传
 
-JavaScript
+使用 `upload.fields(fields)` 按字段分别接收文件。
 
-```
+以下路由同时接收 `avatar` 与 `cover` 两个字段（各最多 1 个文件），并从 `req.files` 中取出对应文件返回其路径：
+
+```javascript
 app.post(
   '/api/upload/profile',
   upload.fields([
@@ -142,15 +131,13 @@ app.post(
 );
 ```
 
-### 4. 统一错误捕获中间件
+## 4. 统一错误捕获中间件
 
-Multer 抛出的错误可以通过判断 `instanceof multer.MulterError` 进行精细化捕获：
+Multer 抛出的错误可以通过判断 `instanceof multer.MulterError` 进行精细化捕获。
 
-  
+以下错误处理中间件区分 Multer 内部错误（如超大文件的 `LIMIT_FILE_SIZE`）与自定义 `fileFilter` 抛出的错误，并分别返回对应的响应：
 
-JavaScript
-
-```
+```javascript
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     // Multer 内部错误（如超大文件 LIMIT_FILE_SIZE）
@@ -166,19 +153,8 @@ app.use((err, req, res, next) => {
 });
 ```
 
-### 5. 关键注意事项
+## 5. 注意事项
 
 - **Content-Type 限制**：Multer **只处理** `multipart/form-data` 请求。如果前端传递的是 `application/json`，Multer 不会解析任何字段。
-    
-      
-    
 - **避免未限制的全局中间件**：永远不要直接在全局 `app.use(upload.any())`，因为恶意用户可能会通过上传大量恶意文件耗尽磁盘或内存。建议按路由按需挂载。
-    
-      
-    
-- **内存占用风险**：如果使用 `memoryStorage`，务必严格设置 `limits.fileSize`，避免并发大文件请求导致 Node.js 进程内存溢出 (OOM)。
-    
-      
-    
-
-你目前是打算将上传的文件直接保存在本地磁盘，还是需要结合内存流直接流式转发到 OSS/S3 等对象存储？
+- **内存占用风险**：如果使用 `memoryStorage`，务必严格设置 `limits.fileSize`，避免并发大文件请求导致 Node.js 进程内存溢出（OOM）。
