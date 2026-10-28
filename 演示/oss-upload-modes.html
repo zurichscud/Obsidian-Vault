@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文件上传到 OSS 的两种方式</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --d-ink: var(--foreground, #23262e);
+    --d-muted: var(--muted-foreground, #5c6577);
+    --d-rule: color-mix(in oklab, var(--d-ink) 14%, transparent);
+    --d-stroke: color-mix(in oklab, var(--d-ink) 22%, transparent);
+    --d-stroke-strong: color-mix(in oklab, var(--d-ink) 38%, transparent);
+    --d-store: color-mix(in oklab, var(--d-ink) 5%, transparent);
+    --d-input: color-mix(in oklab, var(--d-ink) 7%, transparent);
+    --d-tile: color-mix(in oklab, var(--d-ink) 7%, transparent);
+    --d-accent: #cf5a2b;
+    --d-mask: var(--background, #ffffff);
+    --f-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    --f-mono: "SF Mono", "Geist Mono", Menlo, ui-monospace, monospace;
+  }
+
+  html, body { background: transparent; }
+
+  body {
+    font-family: var(--f-sans);
+    color: var(--d-ink);
+    padding: 0;
+  }
+
+  .figure { width: 100%; max-width: 780px; margin: 0 auto; }
+
+  .kicker {
+    font-family: var(--f-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--d-muted);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: var(--f-sans);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+    color: var(--d-ink);
+    margin-bottom: 14px;
+  }
+
+  svg { display: block; width: 100%; height: auto; }
+
+  .eyebrow { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: .16em; fill: var(--d-muted); }
+  .ptitle  { font-size: 19px; font-weight: 700; fill: var(--d-ink); }
+  .pdesc   { font-size: 12px; fill: var(--d-muted); }
+  .nname   { font-size: 15px; font-weight: 600; fill: var(--d-ink); }
+  .nname-s { font-size: 13px; font-weight: 600; fill: var(--d-ink); }
+  .nsub    { font-family: var(--f-mono); font-size: 9px; letter-spacing: .01em; fill: var(--d-muted); }
+  .nsub-s  { font-family: var(--f-mono); font-size: 8.5px; letter-spacing: .01em; fill: var(--d-muted); }
+  .alabel  { font-size: 13px; font-weight: 500; fill: var(--d-ink); }
+  .asub    { font-family: var(--f-mono); font-size: 8px; letter-spacing: .06em; fill: var(--d-muted); }
+  .legend-t { font-size: 12px; fill: var(--d-muted); }
+
+  .node-store   { fill: var(--d-store); stroke: var(--d-stroke); stroke-width: 1; }
+  .node-backend { fill: color-mix(in oklab, var(--d-ink) 2%, transparent); stroke: var(--d-stroke-strong); stroke-width: 1.1; }
+  .node-input   { fill: var(--d-input); stroke: var(--d-stroke); stroke-width: 1; }
+  .tile         { fill: var(--d-tile); }
+
+  .ico { fill: none; stroke: var(--d-ink); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; opacity: .82; }
+  .ico-fill { fill: var(--d-ink); stroke: none; opacity: .55; }
+
+  .flow-accent { fill: none; stroke: var(--d-accent); stroke-width: 1.5; }
+  .flow-muted  { fill: none; stroke: var(--d-muted); stroke-width: 1; stroke-dasharray: 4 4; }
+</style>
+</head>
+<body>
+<div class="figure">
+  <p class="kicker">Object storage · upload patterns</p>
+  <h1>文件上传到 OSS 的两种方式</h1>
+
+  <svg viewBox="0 0 780 640" role="img" aria-labelledby="oss-upload-title oss-upload-desc" xmlns="http://www.w3.org/2000/svg">
+    <title id="oss-upload-title">文件上传到 OSS 的两种方式</title>
+    <desc id="oss-upload-desc">对比服务端代理上传与客户端直传：前者由客户端把文件交给业务服务器，再由服务器转存对象存储；后者由客户端凭业务服务器签发的临时凭证，直接把文件写入对象存储。</desc>
+
+    <defs>
+      <marker id="ar-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--d-accent)"/>
+      </marker>
+      <marker id="ar-muted" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="var(--d-muted)"/>
+      </marker>
+    </defs>
+
+    <rect width="780" height="640" fill="var(--d-mask)"/>
+
+    <!-- divider -->
+    <line x1="372" y1="18" x2="372" y2="592" stroke="var(--d-rule)" stroke-width="2" stroke-dasharray="0.1 8" stroke-linecap="round"/>
+
+    <!-- panel heads -->
+    <text x="28" y="26" class="eyebrow">01 / SERVER PROXY</text>
+    <text x="28" y="50" class="ptitle">服务端代理上传</text>
+    <text x="28" y="70" class="pdesc">文件先经业务服务器，再由服务器转存 OSS。</text>
+
+    <text x="384" y="26" class="eyebrow">02 / DIRECT UPLOAD</text>
+    <text x="384" y="50" class="ptitle">客户端直传</text>
+    <text x="384" y="70" class="pdesc">服务器只签发凭证，文件由客户端直接写入 OSS。</text>
+
+    <!-- arrows first -->
+    <!-- left: client -> server -->
+    <path class="flow-accent" d="M 196 496 V 368" marker-end="url(#ar-accent)"/>
+    <!-- left: server -> oss -->
+    <path class="flow-accent" d="M 196 288 V 204" marker-end="url(#ar-accent)"/>
+    <!-- right: client -> oss (direct) -->
+    <path class="flow-accent" d="M 620 496 V 204" marker-end="url(#ar-accent)"/>
+    <!-- right: server issues credential -> client -->
+    <path class="flow-muted" d="M 448 368 V 522 Q 448 530 456 530 H 540" marker-end="url(#ar-muted)"/>
+
+    <!-- arrow labels -->
+    <rect x="206" y="415" width="64" height="34" rx="2" fill="var(--d-mask)"/>
+    <text x="211" y="430" class="alabel">上传文件</text>
+    <text x="211" y="443" class="asub">MULTIPART</text>
+
+    <rect x="206" y="229" width="64" height="34" rx="2" fill="var(--d-mask)"/>
+    <text x="211" y="244" class="alabel">转存文件</text>
+    <text x="211" y="257" class="asub">PutObject</text>
+
+    <rect x="630" y="333" width="64" height="34" rx="2" fill="var(--d-mask)"/>
+    <text x="635" y="348" class="alabel">上传文件</text>
+    <text x="635" y="361" class="asub">PutObject</text>
+
+    <rect x="458" y="432" width="72" height="34" rx="2" fill="var(--d-mask)"/>
+    <text x="463" y="447" class="alabel">获取凭证</text>
+    <text x="463" y="460" class="asub">STS / 15MIN</text>
+
+    <!-- ============ LEFT: OSS ============ -->
+    <rect x="80" y="116" width="232" height="88" rx="6" fill="var(--d-mask)"/>
+    <rect x="80" y="116" width="232" height="88" rx="6" class="node-store"/>
+    <rect x="96" y="140" width="40" height="40" rx="6" class="tile"/>
+    <g transform="translate(102,146) scale(1.1667)">
+      <path class="ico" d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      <path class="ico" d="m8 16 4-4 4 4"/>
+      <path class="ico" d="M12 12v9"/>
+    </g>
+    <text x="148" y="154" class="nname">对象存储 OSS</text>
+    <text x="148" y="173" class="nsub">bucket: app-uploads</text>
+
+    <!-- ============ LEFT: server ============ -->
+    <rect x="80" y="288" width="232" height="80" rx="6" fill="var(--d-mask)"/>
+    <rect x="80" y="288" width="232" height="80" rx="6" class="node-backend"/>
+    <rect x="96" y="310" width="36" height="36" rx="6" class="tile"/>
+    <g transform="translate(102,316)">
+      <rect class="ico" x="3" y="4" width="18" height="7" rx="1.5"/>
+      <rect class="ico" x="3" y="13" width="18" height="7" rx="1.5"/>
+      <circle class="ico-fill" cx="17" cy="7.5" r="1.1"/>
+      <circle class="ico-fill" cx="17" cy="16.5" r="1.1"/>
+    </g>
+    <text x="144" y="326" class="nname">业务服务器</text>
+    <text x="144" y="343" class="nsub">multipart → PutObject</text>
+
+    <!-- ============ LEFT: client ============ -->
+    <rect x="80" y="496" width="232" height="80" rx="6" fill="var(--d-mask)"/>
+    <rect x="80" y="496" width="232" height="80" rx="6" class="node-input"/>
+    <rect x="96" y="518" width="36" height="36" rx="6" class="tile"/>
+    <g transform="translate(102,524)">
+      <rect class="ico" x="7" y="2.5" width="10" height="19" rx="2"/>
+      <path class="ico" d="M11 18.5h2"/>
+    </g>
+    <text x="144" y="534" class="nname">客户端</text>
+    <text x="144" y="551" class="nsub">Web / iOS / Android</text>
+
+    <!-- ============ RIGHT: OSS ============ -->
+    <rect x="500" y="116" width="240" height="88" rx="6" fill="var(--d-mask)"/>
+    <rect x="500" y="116" width="240" height="88" rx="6" class="node-store"/>
+    <rect x="516" y="140" width="40" height="40" rx="6" class="tile"/>
+    <g transform="translate(522,146) scale(1.1667)">
+      <path class="ico" d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      <path class="ico" d="m8 16 4-4 4 4"/>
+      <path class="ico" d="M12 12v9"/>
+    </g>
+    <text x="568" y="154" class="nname">对象存储 OSS</text>
+    <text x="568" y="173" class="nsub">bucket: app-uploads</text>
+
+    <!-- ============ RIGHT: server ============ -->
+    <rect x="384" y="288" width="128" height="80" rx="6" fill="var(--d-mask)"/>
+    <rect x="384" y="288" width="128" height="80" rx="6" class="node-backend"/>
+    <rect x="396" y="314" width="28" height="28" rx="6" class="tile"/>
+    <g transform="translate(400,318) scale(0.8333)">
+      <rect class="ico" x="3" y="4" width="18" height="7" rx="1.5"/>
+      <rect class="ico" x="3" y="13" width="18" height="7" rx="1.5"/>
+      <circle class="ico-fill" cx="17" cy="7.5" r="1.1"/>
+      <circle class="ico-fill" cx="17" cy="16.5" r="1.1"/>
+    </g>
+    <text x="434" y="326" class="nname-s">业务服务器</text>
+    <text x="434" y="343" class="nsub-s">STS / SIGN</text>
+
+    <!-- ============ RIGHT: client ============ -->
+    <rect x="540" y="496" width="160" height="80" rx="6" fill="var(--d-mask)"/>
+    <rect x="540" y="496" width="160" height="80" rx="6" class="node-input"/>
+    <rect x="574" y="522" width="32" height="32" rx="6" class="tile"/>
+    <g transform="translate(580,528) scale(0.8333)">
+      <rect class="ico" x="7" y="2.5" width="10" height="19" rx="2"/>
+      <path class="ico" d="M11 18.5h2"/>
+    </g>
+    <text x="616" y="532" class="nname-s">客户端</text>
+    <text x="616" y="549" class="nsub-s">WEB / APP</text>
+
+    <!-- legend -->
+    <line x1="28" y1="596" x2="752" y2="596" stroke="var(--d-rule)" stroke-width="0.8"/>
+    <line class="flow-accent" x1="28" y1="613" x2="56" y2="613" marker-end="url(#ar-accent)"/>
+    <text x="66" y="618" class="legend-t">文件流</text>
+    <line class="flow-muted" x1="132" y1="613" x2="160" y2="613" marker-end="url(#ar-muted)"/>
+    <text x="170" y="618" class="legend-t">凭证 / 授权</text>
+  </svg>
+</div>
+
+</body>
+</html>

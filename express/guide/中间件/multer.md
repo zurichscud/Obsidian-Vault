@@ -73,6 +73,8 @@ const uploadToMemory = multer({
 });
 ```
 
+> [!warning] 注意
+> fileSize应该小于服务器的可用内存大小，如果需要传大文件到OSS，应该使用磁盘存储。
 ## 3. 常见路由接收场景
 
 ### 3.1 单文件上传
