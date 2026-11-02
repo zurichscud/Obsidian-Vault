@@ -32,7 +32,7 @@
 Cache-Control: public, max-age=31536000, immutable
 ```
 
-### 3.2 单页应用（SPA）入口文件 `index.html`
+### 3.2 单页应用入口文件 `index.html`
 
 **策略**：始终走协商缓存，确保前端发布新版本后，用户刷新即可获取最新 HTML，并加载最新的 JS/CSS 文件。
 

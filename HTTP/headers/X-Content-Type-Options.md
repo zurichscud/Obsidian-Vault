@@ -1,6 +1,9 @@
 ## 1. 作用
 
-`X-Content-Type-Options: nosniff` 是一个 HTTP 安全响应头，用于禁止浏览器进行 MIME 类型嗅探。
+`X-Content-Type-Options` 是 HTTP **响应头**，用于阻止浏览器对响应内容进行 **MIME 类型嗅探**（MIME sniffing），强制浏览器严格遵循服务器声明的 `Content-Type` 处理资源
+```
+X-Content-Type-Options: nosniff
+```
 
 ## 2. 背景
 
@@ -8,4 +11,4 @@
 
 ## 3. 启用后的行为
 
-加上 `nosniff` 后，浏览器会严格按服务器声明的 `Content-Type` 处理，不再猜测。
+`X-Content-Type-Options` 是**标准化的 HTTP 响应头**，并非自定义响应头。早期非标准头常用 `X-` 前缀，但 `X-Content-Type-Options` 虽带 `X-` 前缀，已被主流浏览器**标准化实现**，浏览器会主动读取这个响应头。
