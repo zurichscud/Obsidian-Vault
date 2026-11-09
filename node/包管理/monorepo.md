@@ -156,7 +156,7 @@ import { CreateUserSchema, type CreateUserInput } from '@my-proj/schema';
 
 ### 6.1 pnpm-workspace.yaml 的作用
 
-`pnpm-workspace.yaml` 是使用 **pnpm** 管理 Monorepo（工作区，Workspace）时的**核心配置文件**。
+`pnpm-workspace.yaml` 是使用 **pnpm** 管理 Monorepo时的**核心配置文件**。
 
 只要在仓库根目录下放置该文件，pnpm 就会将当前项目识别为一个 Workspace 架构，并自动处理各子包之间的符号链接（Symlink）、本地依赖解析和批量指令执行。
 
