@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JS 函数知识图谱</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    color: var(--fg, #1b1b1f);
+  }
+  .kg {
+    --fg: var(--foreground, #1b1b1f);
+    --muted: var(--muted-foreground, #75757d);
+    --card: var(--card, #ffffff);
+    --bd: var(--border, #e5e4e9);
+    --c1: var(--chart-4, #a9762e);
+    --c2: var(--chart-1, #3f6fd8);
+    --c3: var(--chart-5, #8a63d2);
+    --c4: var(--chart-2, #2f8f68);
+    --mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+    color: var(--fg);
+  }
+  .stage { position: relative; width: 100%; height: 540px; overflow: hidden; }
+  .canvas {
+    position: absolute; top: 0; left: 50%;
+    width: 720px; height: 540px;
+    margin-left: -360px;
+    transform-origin: top center;
+  }
+  #edges { position: absolute; inset: 0; width: 720px; height: 540px; pointer-events: none; }
+  .nodes { position: absolute; inset: 0; }
+
+  .edge { fill: none; stroke: var(--fg); stroke-width: 1.05; opacity: .28; transition: opacity .18s ease; }
+  .edge.trunk { opacity: .22; }
+  .edge.dashed { stroke: var(--c3); stroke-dasharray: 3 3.5; opacity: .85; stroke-width: 1.2; }
+  .rel-label { font-size: 9px; letter-spacing: .04em; fill: var(--c3); opacity: .95; transition: opacity .18s ease; }
+  .dot { fill: var(--fg); opacity: .3; }
+  .canvas.dim .edge { opacity: .06; }
+  .canvas.dim .edge.lit { opacity: .34; }
+  .canvas.dim .edge.dashed { opacity: .06; }
+  .canvas.dim .edge.dashed.lit { opacity: .5; }
+  .canvas.dim .rel-label { opacity: .12; }
+  .canvas.dim .dot { opacity: .1; }
+
+  .node {
+    position: absolute;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--bd);
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 11px;
+    transition: opacity .18s ease, border-color .18s ease, background .18s ease, transform .18s ease;
+  }
+  .node.card::before {
+    content: "";
+    position: absolute; left: 0; top: 9px; bottom: 9px;
+    width: 2px; border-radius: 2px;
+    background: var(--accent);
+    opacity: .55;
+  }
+  .node[role="button"] { cursor: pointer; }
+  .node[role="button"]:hover {
+    border-color: color-mix(in oklab, var(--accent) 42%, var(--bd));
+    background: color-mix(in oklab, var(--accent) 4%, var(--card));
+    transform: translateY(-1px);
+  }
+  .node.sel { border-color: color-mix(in oklab, var(--accent) 60%, var(--bd)); }
+  .node:focus-visible { outline: 2px solid color-mix(in oklab, var(--accent) 55%, transparent); outline-offset: 2px; }
+
+  .node.root {
+    border: none; border-radius: 999px;
+    background: var(--fg); color: var(--background, #fff);
+    align-items: center; padding: 0;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .04em;
+  }
+  .node.head {
+    background: color-mix(in oklab, var(--accent) 9%, var(--card));
+    border-color: color-mix(in oklab, var(--accent) 26%, var(--bd));
+    border-radius: 11px;
+    gap: 1px;
+  }
+  .h-file {
+    font-family: var(--mono); font-size: 8.5px; line-height: 1.2;
+    letter-spacing: .02em;
+    color: color-mix(in oklab, var(--accent) 80%, var(--fg));
+  }
+  .h-name { font-size: 13.5px; font-weight: 600; line-height: 1.25; letter-spacing: .01em; }
+
+  .n-title { font-size: 11.5px; font-weight: 500; line-height: 1.25; }
+  .n-sub {
+    margin-top: 2px;
+    font-size: 9.5px; line-height: 1.3; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .n-sub.mono, .node.mono .n-title { font-family: var(--mono); }
+  .node.mono .n-title { font-size: 9px; letter-spacing: -.01em; color: color-mix(in oklab, var(--fg) 82%, var(--muted)); }
+  .node.note { background: color-mix(in oklab, var(--accent) 7%, transparent); border-style: dashed; }
+  .node.note .n-sub { font-size: 9px; }
+  .node.ghost { background: transparent; border-style: dashed; }
+  .node.counter { background: color-mix(in oklab, var(--accent) 6%, transparent); border-style: dashed; }
+  .node.counter .n-title { color: color-mix(in oklab, var(--accent) 72%, var(--fg)); }
+
+  .canvas.dim .node:not(.lit) { opacity: .28; }
+
+  .detail {
+    margin-top: 16px;
+    min-height: 58px;
+    display: flex; gap: 10px; align-items: center;
+    padding: 11px 14px;
+    border-radius: 11px;
+    background: color-mix(in oklab, var(--fg) 4.5%, transparent);
+  }
+  .d-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted); opacity: .55;
+    flex: none;
+    transition: background .18s ease;
+  }
+  .d-copy { min-width: 0; }
+  .d-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+  .d-title { font-size: 11.5px; font-weight: 600; letter-spacing: .01em; }
+  .d-title.idle { font-weight: 400; color: var(--muted); }
+  .d-src { font-family: var(--mono); font-size: 9.5px; color: var(--muted); opacity: .9; }
+  .d-body { margin-top: 3px; font-size: 11px; line-height: 1.6; color: var(--muted); }
+  .d-body:empty { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .node, .edge, .d-dot, .rel-label { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="kg" id="kg">
+  <div class="stage" id="stage">
+    <div class="canvas" id="canvas">
+      <svg id="edges" viewBox="0 0 720 540" aria-hidden="true"></svg>
+      <div class="nodes" id="nodes"></div>
+    </div>
+  </div>
+  <div class="detail" id="detail" aria-live="polite">
+    <span class="d-dot" id="ddot"></span>
+    <div class="d-copy">
+      <div class="d-head">
+        <span class="d-title idle" id="dtitle">点击节点查看笔记要点</span>
+        <span class="d-src" id="dsrc"></span>
+      </div>
+      <div class="d-body" id="dbody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const CL = {
+    this:  { file: 'this.md',       c: 'var(--c1)' },
+    hof:   { file: '高阶函数.md',    c: 'var(--c2)' },
+    curry: { file: '函数柯里化.md',  c: 'var(--c3)' },
+    pure:  { file: '纯函数.md',      c: 'var(--c4)' }
+  };
+  const X = { this: 97, hof: 261, curry: 459, pure: 623 };
+  const LEFT = { this: 28, hof: 192, curry: 390, pure: 554 };
+  const HEAD_Y = 126;
+
+  const NODES = [
+    { id: 'root', kind: 'root', x: 360, y: 40, w: 104, h: 30, title: 'JS 函数' },
+
+    /* ---------- this ---------- */
+    { id: 'h-this', kind: 'head', c: 'this', x: X.this, y: HEAD_Y, w: 138, h: 44, title: 'this',
+      detail: 'this 的指向在函数被调用时动态绑定，取决于函数的调用方式和所在上下文。' },
+    { id: 't1', kind: 'card', c: 'this', x: X.this, y: 190, w: 138, h: 48, title: '默认绑定', sub: 'window / undefined', mono: true, sec: '1.1',
+      detail: '普通函数被直接调用时，非严格模式指向 window 或 global，严格模式指向 undefined。' },
+    { id: 't2', kind: 'card', c: 'this', x: X.this, y: 246, w: 138, h: 48, title: '隐式绑定', sub: 'obj.getName()', mono: true, sec: '1.2',
+      detail: '作为对象方法调用时，this 指向最后调用它的对象，即点操作符左侧的对象；赋值给变量再调用会丢失。' },
+    { id: 't3', kind: 'card', c: 'this', x: X.this, y: 302, w: 138, h: 48, title: '显式绑定', sub: 'call · apply · bind', mono: true, sec: '1.3',
+      detail: 'call 与 apply 立即执行，参数分别逐个传递和以数组传递；bind 不立即执行，返回新的绑定函数。' },
+    { id: 't4', kind: 'card', c: 'this', x: X.this, y: 358, w: 138, h: 48, title: 'new 绑定', sub: 'new Person()', mono: true, sec: '1.4',
+      detail: '用 new 调用函数时会创建一个全新的对象，this 绑定到这个新创建的对象上。' },
+    { id: 't5', kind: 'card', c: 'this', x: X.this, y: 414, w: 138, h: 48, title: '箭头函数', sub: '定义时继承外层 this', sec: '1.5',
+      detail: '箭头函数没有自己的 this，定义时静态继承外层最近的非箭头函数的 this，且无法通过 call/apply/bind 改变。' },
+    { id: 't6', kind: 'note', c: 'this', x: X.this, y: 478, w: 138, h: 50, title: '规则优先级', sub: 'new > 显式 > 隐式 > 默认', sec: '2',
+      detail: 'new 绑定 > 显式绑定 > 隐式绑定 > 默认绑定；箭头函数的 this 由外层作用域决定，不参与优先级比较。' },
+
+    /* ---------- 高阶函数 ---------- */
+    { id: 'h-hof', kind: 'head', c: 'hof', x: X.hof, y: HEAD_Y, w: 138, h: 44, title: '高阶函数',
+      detail: '接收一个或多个函数作为参数，或者返回一个函数，满足其一就是高阶函数。' },
+    { id: 'h1', kind: 'card', c: 'hof', x: X.hof, y: 190, w: 138, h: 48, title: '接收函数作为参数', sub: 'execute(sayHello)', mono: true, sec: '1',
+      detail: '把 sayHello 作为参数传入 execute，execute 内部再以 fn(value) 调用它。' },
+    { id: 'h2', kind: 'card', c: 'hof', x: X.hof, y: 246, w: 138, h: 48, title: '返回一个函数', sub: 'createMultiplier(2)', mono: true, sec: '2',
+      detail: 'createMultiplier 接收 x，返回一个新函数；const double = createMultiplier(2)。' },
+    { id: 'h3', kind: 'card', c: 'hof', x: X.hof, y: 302, w: 138, h: 48, title: '代码复用', sub: 'withLog(fn)', mono: true, sec: '3.1',
+      detail: 'withLog 返回的新函数会在调用原函数前后各打印一行日志，原函数本身不用改动。' },
+    { id: 'h4', kind: 'card', c: 'hof', x: X.hof, y: 358, w: 138, h: 48, title: '函数增强', sub: '不修改原函数', sec: '3.2',
+      detail: '不用修改 oldFn，通过 const newFn = withLog(oldFn) 直接增强它。' },
+    { id: 'h5', kind: 'card', c: 'hof', x: X.hof, y: 414, w: 138, h: 48, title: '逻辑抽象与复用', sub: '循环 / 异常 / 防抖', sec: '3',
+      detail: '把通用的控制流程（循环、异常处理、防抖）与具体的业务逻辑拆分开。' },
+
+    /* ---------- 函数柯里化 ---------- */
+    { id: 'h-curry', kind: 'head', c: 'curry', x: X.curry, y: HEAD_Y, w: 138, h: 44, title: '函数柯里化',
+      detail: '把接收多个参数的函数，转换为一系列只接收单个（或部分）参数并返回新函数的技术。' },
+    { id: 'c1', kind: 'card', c: 'curry', x: X.curry, y: 190, w: 138, h: 48, title: '定义', sub: '多参数 → 连续单参', sec: '1',
+      detail: '将多参调用 f(a, b, c) 转换为连续单参调用 f(a)(b)(c)。' },
+    { id: 'c2', kind: 'card', c: 'curry', x: X.curry, y: 246, w: 138, h: 48, title: '参数复用（偏函数）', sub: 'check(reg)(text)', mono: true, sec: '3.1',
+      detail: '固定常用参数，生成职责更专一的新函数；checkPhone = check(/^1\\d{10}$/)，避免重复传配置。' },
+    { id: 'c3', kind: 'card', c: 'curry', x: X.curry, y: 302, w: 138, h: 48, title: '延迟执行', sub: '收集齐参数再计算', sec: '3.2',
+      detail: '收集齐所有依赖参数之前不会触发最终计算，便于在不同时机或不同层级注入参数。' },
+    { id: 'c4', kind: 'card', c: 'curry', x: X.curry, y: 358, w: 138, h: 48, title: '管道式组合', sub: 'compose / pipe', mono: true, sec: '3.3',
+      detail: '在 compose 或 pipe 中，单参数函数更易于像积木一样拼装与流转数据。' },
+    { id: 'c5', kind: 'mono ghost', c: 'curry', x: X.curry, y: 414, w: 138, h: 38, title: 'f(a,b,c)→f(a)(b)(c)', sec: '1',
+      detail: '柯里化的核心思想：把一次多参调用，拆成连续的逐个参数调用。' },
+
+    /* ---------- 纯函数 ---------- */
+    { id: 'h-pure', kind: 'head', c: 'pure', x: X.pure, y: HEAD_Y, w: 138, h: 44, title: '纯函数',
+      detail: '相同的输入永远得到相同的输出，且不修改外部状态、不产生副作用。' },
+    { id: 'p1', kind: 'card', c: 'pure', x: X.pure, y: 190, w: 138, h: 48, title: '确定输入 → 确定输出', sub: 'add(1, 2) // 3', mono: true, sec: '1',
+      detail: '对于相同的输入参数，无论调用多少次、在什么环境下执行，返回结果永远相同。' },
+    { id: 'p2', kind: 'card', c: 'pure', x: X.pure, y: 246, w: 138, h: 48, title: '无副作用', sub: '不修改外部状态', sec: '1',
+      detail: '函数执行过程中不修改外部状态，也不产生任何可被外界察觉的副作用。' },
+    { id: 'p3', kind: 'counter', c: 'pure', x: X.pure, y: 330, w: 138, h: 52, title: '反例：依赖外部状态', sub: 'count 改变 → 输出不同', sec: '3',
+      detail: '依赖外部变量 count：count 改为 20 后，相同的输入 num 会得到不同输出，因此不是纯函数。' }
+  ];
+
+  /* ---------- 节点 ---------- */
+  const nodesEl = document.getElementById('nodes');
+  const nodeEls = new Map();
+
+  NODES.forEach(function (n) {
+    const el = document.createElement('div');
+    el.className = 'node ' + n.kind;
+    el.style.left = (n.x - n.w / 2) + 'px';
+    el.style.top = (n.y - n.h / 2) + 'px';
+    el.style.width = n.w + 'px';
+    el.style.height = n.h + 'px';
+    if (n.c) {
+      el.style.setProperty('--accent', CL[n.c].c);
+      el.dataset.c = n.c;
+    }
+    el.dataset.id = n.id;
+
+    if (n.kind === 'root') {
+      el.textContent = n.title;
+    } else if (n.kind === 'head') {
+      el.innerHTML = '<span class="h-file">' + CL[n.c].file + '</span><span class="h-name">' + n.title + '</span>';
+    } else {
+      el.innerHTML = '<div class="n-title">' + n.title + '</div>' +
+        (n.sub ? '<div class="n-sub' + (n.mono ? ' mono' : '') + '">' + n.sub + '</div>' : '');
+    }
+
+    if (n.kind !== 'root') {
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.addEventListener('click', function (ev) { ev.stopPropagation(); toggle(n); });
+      el.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); toggle(n); }
+      });
+    }
+
+    nodesEl.appendChild(el);
+    nodeEls.set(n.id, el);
+  });
+
+  /* ---------- 连线 ---------- */
+  const svg = document.getElementById('edges');
+  const edgePaths = [];
+
+  function addPath(d, opt) {
+    opt = opt || {};
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('class', 'edge' + (opt.trunk ? ' trunk' : '') + (opt.dashed ? ' dashed' : ''));
+    if (opt.c) p.dataset.c = opt.c;
+    svg.appendChild(p);
+    edgePaths.push(p);
+    return p;
+  }
+
+  addPath('M360 55 V80', { trunk: true });
+  addPath('M97 80 H623', { trunk: true });
+  ['this', 'hof', 'curry', 'pure'].forEach(function (k) {
+    addPath('M' + X[k] + ' 80 V104', { trunk: true });
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', X[k]);
+    dot.setAttribute('cy', 80);
+    dot.setAttribute('r', 2.1);
+    dot.setAttribute('class', 'dot');
+    svg.appendChild(dot);
+  });
+
+  ['this', 'hof', 'curry', 'pure'].forEach(function (k) {
+    const cards = NODES.filter(function (n) { return n.c === k && n.kind !== 'head'; });
+    const lastY = Math.max.apply(null, cards.map(function (n) { return n.y; }));
+    const sx = LEFT[k] - 12;
+    addPath('M' + (LEFT[k] + 10) + ' 148 H' + sx + ' V' + lastY, { c: k });
+    cards.forEach(function (n) {
+      addPath('M' + sx + ' ' + n.y + ' H' + LEFT[k], { c: k });
+    });
+  });
+
+  addPath('M333 126 H386', { c: 'curry', dashed: true }).setAttribute('marker-end', 'url(#arw)');
+  const marker = document.createElementNS(NS, 'marker');
+  marker.setAttribute('id', 'arw');
+  marker.setAttribute('viewBox', '0 0 8 8');
+  marker.setAttribute('refX', '6.4');
+  marker.setAttribute('refY', '4');
+  marker.setAttribute('markerWidth', '6');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('orient', 'auto');
+  const mpath = document.createElementNS(NS, 'path');
+  mpath.setAttribute('d', 'M1.2 1.2 L6.2 4 L1.2 6.8');
+  mpath.setAttribute('fill', 'none');
+  mpath.setAttribute('stroke', 'var(--c3)');
+  mpath.setAttribute('stroke-width', '1.2');
+  mpath.setAttribute('stroke-linecap', 'round');
+  mpath.setAttribute('stroke-linejoin', 'round');
+  marker.appendChild(mpath);
+
+  const defs = document.createElementNS(NS, 'defs');
+  defs.appendChild(marker);
+  svg.insertBefore(defs, svg.firstChild);
+
+  const relLabel = document.createElementNS(NS, 'text');
+  relLabel.setAttribute('x', 360);
+  relLabel.setAttribute('y', 112);
+  relLabel.setAttribute('text-anchor', 'middle');
+  relLabel.setAttribute('class', 'rel-label');
+  relLabel.dataset.c = 'curry';
+  relLabel.textContent = '一种应用';
+  svg.appendChild(relLabel);
+
+  /* ---------- 高亮与详情 ---------- */
+  const canvasEl = document.getElementById('canvas');
+  const dTitle = document.getElementById('dtitle');
+  const dSrc = document.getElementById('dsrc');
+  const dBody = document.getElementById('dbody');
+  const dDot = document.getElementById('ddot');
+  let pinned = null;
+
+  function highlight(c, id) {
+    canvasEl.classList.toggle('dim', !!c);
+    nodeEls.forEach(function (el, nid) {
+      el.classList.toggle('lit', !!c && el.dataset.c === c);
+      el.classList.toggle('sel', nid === id);
+    });
+    edgePaths.forEach(function (p) {
+      p.classList.toggle('lit', !!c && p.dataset.c === c);
+    });
+    relLabel.classList.toggle('lit', c === 'curry');
+  }
+
+  function show(n) {
+    dTitle.textContent = n.title;
+    dTitle.classList.remove('idle');
+    const file = CL[n.c].file;
+    dSrc.textContent = n.sec ? file + ' · §' + n.sec : file;
+    dBody.textContent = n.detail || '';
+    dDot.style.background = CL[n.c].c;
+    dDot.style.opacity = '1';
+  }
+
+  function idle() {
+    dTitle.textContent = '点击节点查看笔记要点';
+    dTitle.classList.add('idle');
+    dSrc.textContent = '';
+    dBody.textContent = '';
+    dDot.style.background = 'var(--muted)';
+    dDot.style.opacity = '.55';
+  }
+
+  function toggle(n) {
+    if (pinned === n.id) {
+      pinned = null;
+      highlight(null, null);
+      idle();
+    } else {
+      pinned = n.id;
+      highlight(n.c, n.id);
+      show(n);
+    }
+  }
+
+  canvasEl.addEventListener('click', function () {
+    if (pinned) { pinned = null; highlight(null, null); idle(); }
+  });
+
+  /* ---------- 自适应宽度 ---------- */
+  const kg = document.getElementById('kg');
+  const stage = document.getElementById('stage');
+  const GH = 540;
+  function fit() {
+    const w = kg.clientWidth;
+    if (!w) return;
+    const s = Math.min(1, w / 720);
+    canvasEl.style.transform = 'scale(' + s + ')';
+    stage.style.height = (GH * s) + 'px';
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(kg);
+  else window.addEventListener('resize', fit);
+  fit();
+})();
+</script>
+</body>
+</html>

@@ -1,125 +1,132 @@
 ---
 title: this
 ---
-JavaScript 中的 `this` 指向并不是在编写时决定的，而是在**函数被调用时**动态绑定的。掌握 `this` 的指向，关键在于查看**函数的调用方式和所在上下文**。
 
-## 1. 核心绑定规则
+JS 中的 `this` 是一个在**函数被调用时**才确定的引用，它指向“当前执行上下文的主体”。核心要记住一句话：**`this` 取决于函数怎么被调用，而不是在哪里定义的**（箭头函数除外）。
 
-根据函数的调用形式，`this` 的指向分为以下 5 种主要情况：
+## 1. 四种绑定规则（优先级从低到高）
 
-### 1.1 默认绑定（全局 / 独立调用）
+**优先级**：`new` > 显式绑定（`bind` / `call` / `apply`）> 隐式绑定 > 默认绑定。
 
-当函数作为普通函数被直接调用时，`this` 指向全局对象。
+### 1.1 默认绑定：独立函数调用
 
-- **非严格模式**：指向 `window`（浏览器环境）或 `global`（Node.js 环境）。
-- **严格模式（`'use strict'`）**：指向 `undefined`。
+独立调用函数时，`this` 取默认值：
 
 ```js
 function foo() {
   console.log(this);
 }
-
-foo(); // 非严格模式下输出 window；严格模式下输出 undefined
+foo(); // 非严格模式:window / globalThis;严格模式:undefined
 ```
 
-### 1.2 隐式绑定（对象方法调用）
+### 1.2 隐式绑定：作为对象方法调用
 
-当函数作为某个对象的方法被调用时，`this` 指向**最后调用它的那个对象**（即点操作符 `.` 左侧的对象）。
+作为对象的方法调用时，`this` 指向“点”前面的对象：
 
 ```js
 const obj = {
-  name: 'Vue Dev',
-  getName() {
-    console.log(this.name);
-  }
+  name: 'Tom',
+  say() { console.log(this.name); }
 };
-
-obj.getName(); // 输出 'Vue Dev'，this 指向 obj
-
-// 注意：隐式丢失
-const fn = obj.getName;
-
-fn(); // 输出 undefined，此时为普通独立调用，this 指向 window/undefined
+obj.say(); // 'Tom',this 指向"点"前面的对象
 ```
 
-### 1.3 显式绑定（`call` / `apply` / `bind`）
-
-通过 `call`、`apply` 或 `bind` 可以手动强行指定函数执行时的 `this` 指向。
-
-- **`call(thisArg, arg1, arg2...)`**：立即执行，参数逐个传递。
-- **`apply(thisArg, [argsArray])`**：立即执行，参数以数组形式传递。
-- **`bind(thisArg, arg1, arg2...)`**：**不立即执行**，返回一个新的绑定函数。
-
-下面用三种方式给同一个函数指定 `this`：
+**隐式丢失**是最常见的坑：把方法单独取出，或作为回调传入，`this` 都会丢失。
 
 ```js
-function greet(lang1, lang2) {
-  console.log(`${this.name} knows ${lang1} and ${lang2}`);
-}
+const fn = obj.say;
+fn(); // this 丢失,变成默认绑定,拿不到 name
 
-const person = { name: 'Fullstacker' };
-
-greet.call(person, 'Vue', 'Java'); // Fullstacker knows Vue and Java
-greet.apply(person, ['Vue', 'Java']); // Fullstacker knows Vue and Java
-
-const boundFn = greet.bind(person, 'Vue', 'Java');
-boundFn(); // Fullstacker knows Vue and Java
+setTimeout(obj.say, 100); // 同样丢失
 ```
 
-### 1.4 `new` 绑定（构造函数调用）
+### 1.3 显式绑定：call / apply / bind
 
-当使用 `new` 操作符调用函数时，会创建一个全新的对象，此时 `this` 绑定到这个**新创建的对象**上。
+三种显式绑定方式的用法对比：
+
+```js
+function say(greet) { console.log(greet + this.name); }
+const p = { name: 'Tom' };
+
+say.call(p, 'Hi ');      // 立即调用,参数逐个传
+say.apply(p, ['Hi ']);   // 立即调用,参数传数组
+const bound = say.bind(p); // 返回新函数,this 永久绑定
+bound('Hi ');
+```
+
+|方法|是否立即执行|参数传递|返回值|
+|---|---|---|---|
+|`call(thisArg, a, b)`|是|逐个传|函数的返回值|
+|`apply(thisArg, [a, b])`|是|数组(或类数组)|函数的返回值|
+|`bind(thisArg, a, b)`|否|逐个传(可预置部分)|**新函数**|
+### 1.4 new 绑定：构造调用
+
+用 `new` 调用构造函数时，`this` 指向新创建的实例：
 
 ```js
 function Person(name) {
-  this.name = name;
+  this.name = name; // this 指向新创建的实例
 }
-
-const p = new Person('Developer');
-
-console.log(p.name); // 'Developer'
+const p = new Person('Tom');
 ```
 
-### 1.5 箭头函数
+`new` 的过程：创建空对象 → 链接原型 → 以该对象为 `this` 执行构造函数 → 返回该对象（除非构造函数显式返回了对象）。
 
-**箭头函数没有自己的 `this`**，它的 `this` 遵循**词法作用域（Lexical Scoping）**原则：在**定义时**静态继承外层最近的非箭头函数（或全局上下文）的 `this`，且**生命周期内永远保持不变**，无法通过 `call/apply/bind` 改变。
+## 2. 箭头函数：没有自己的 this
 
-箭头函数在对象方法内部定义时，会继承该方法的 `this`：
+箭头函数不遵守上面的规则，它的 `this` 在**定义时**由外层作用域（词法作用域）决定，且无法被 `call` / `apply` / `bind` 修改。
+
+在方法内部使用箭头函数时，`this` 继承自 `delay`：
 
 ```js
 const obj = {
-  name: 'App',
-  regularFn() {
-    // 箭头函数没有自己的 this，向上继承 regularFn 的 this（即 obj）
-    const arrowFn = () => console.log(this.name);
-    arrowFn();
-  }
-};
-
-obj.regularFn(); // 输出 'App'
-```
-
-`setTimeout` 的回调写成普通函数会丢失 `this`，写成箭头函数则会继承 `delayLog` 的 `this`：
-
-```js
-const obj = {
-  name: 'App',
-  delayLog() {
-    // 普通函数里的 setTimeout 会丢失 this，但箭头函数会继承 delayLog 的 this
+  name: 'Tom',
+  delay() {
     setTimeout(() => {
-      console.log(this.name); // 输出 'App'
+      console.log(this.name); // 'Tom',继承自 delay 的 this
     }, 100);
   }
 };
-
-obj.delayLog();
 ```
 
-## 2. 规则优先级
+### 2.1 不要用箭头函数定义对象方法
 
-如果同一函数调用同时满足多种规则，按以下优先级决定 `this`：
+对象方法写成箭头函数时，`this` 指向外层而不是 `obj`：
 
-$$\text{new 绑定} > \text{显式绑定 (call/apply/bind)} > \text{隐式绑定 (obj.fn)} > \text{默认绑定}$$
+```js
+const obj = {
+  name: 'Tom',
+  say: () => console.log(this.name) // this 是外层(模块/全局),不是 obj
+};
+```
 
-> [!note]
-> 箭头函数的 `this` 由外层作用域决定，不参与上述优先级的比较。
+箭头函数也不能用作构造函数（`new` 会报错）。
+
+### 2.2 对象字面量不产生作用域
+
+很多人以为 `{ ... }` 会像函数一样创建一个新的 `this` 环境，**其实不会**。只有函数（普通函数）才会创建 `this` 绑定，对象字面量只是一堆键值对。
+
+所以箭头函数 `say` 往外找 `this` 时，会跳过 `obj`，直接找到 `obj` 所在的那一层：
+
+```js
+const obj = {
+  name: 'Tom',
+  say: () => console.log(this.name)
+};
+// ↑ 这个箭头函数的外层,就是 obj 所在的"顶层"
+```
+
+同一个 `obj` 中，普通方法与箭头方法的对比：
+
+```js
+const obj = {
+  name: 'Tom',
+  say1() { console.log(this.name); },       // 普通函数
+  say2: () => console.log(this.name)        // 箭头函数
+};
+
+obj.say1(); // 'Tom'   —— 调用时 this = obj(点前面的对象)
+obj.say2(); // 不是 Tom —— 定义时 this 就已经定死为外层 this
+```
+
+箭头函数的 `this` 是在**定义时**就按词法作用域确定的，之后不管怎么调用（`obj.say2()`、`call`、`bind`），都改变不了。
