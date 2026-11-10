@@ -3,5 +3,6 @@
   "showLineNumber": false,
   "spellcheck": false,
   "attachmentFolderPath": "./asserts",
-  "alwaysUpdateLinks": true
+  "alwaysUpdateLinks": true,
+  "strictLineBreaks": false
 }

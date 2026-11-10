@@ -1,6 +1,6 @@
 ## 1. 概念
 
-**Monorepo（单体代码仓库，Monolithic Repository）** 是一种软件工程架构模式：将多个独立项目或子模块的代码存放在同一个版本控制仓库（如单个 Git Repo）中统一管理。与之相对的是传统的 **Multi-repo / Polyrepo（多仓库模式）**。
+**Monorepo** 是一种软件工程架构模式：将多个独立项目或子模块的代码存放在同一个版本控制仓库（如单个 Git Repo）中统一管理。与之相对的是传统的 **Multi-repo （多仓库模式）**。
 
 ## 2. 典型的工程目录结构
 
@@ -36,16 +36,10 @@ my-monorepo/
 
 本地修改 `@my-org/ui` 时，前端 Vite 热更新会直接生效，无需手动编译发布。
 
-## 3. 包含后端时的两种模式
-
-在包含后端的场景下，Monorepo 的架构主要取决于**技术栈是否同构**，常见有两种模式：
-
-1. **多语言混合 Monorepo（Polyglot Monorepo）：** 例如前端是 `Vue 3 / TypeScript`，后端是 `Java (Spring Boot / Maven 或 Gradle)`。
-2. **同构语言 Monorepo（Full-stack TypeScript）：** 前端与后端均采用 Node.js（如 `Express` / `NestJS` / `Next.js`）。
 
 ## 4. 方案 A：多语言混合架构
 
-以 Vue 3 + Java Spring Boot 为例，这是企业级业务中最常见的组合。Java 生态依赖 Maven/Gradle，前端依赖 pnpm，**两者的依赖机制无法完全合并**，通常采用“**统一仓库、分域构建、契约共享**”的方式组织。
+以 Vue 3 + Java Spring Boot 为例，这是企业级业务中最常见的组合。Java 生态依赖 Maven，前端依赖 pnpm，**两者的依赖机制无法完全合并**，通常采用“**统一仓库、分域构建、契约共享**”的方式组织。
 
 ### 4.1 目录结构
 
@@ -126,7 +120,7 @@ export const CreateUserSchema = z.object({
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 ```
 
-#### 后端（Express）消费
+#### 后端消费
 
 后端引入该 Schema，对请求体做运行时校验，校验通过后 `parseResult.data` 具有完整的 TS 类型安全：
 
@@ -142,7 +136,7 @@ app.post('/api/users', (req, res) => {
 });
 ```
 
-#### 前端（Vue 3 表单校验）消费
+#### 前端消费
 
 前端复用同一份 Schema 做表单校验，无需重复编写正则表达式或校验规则：
 
@@ -158,7 +152,7 @@ import { CreateUserSchema, type CreateUserInput } from '@my-proj/schema';
 
 `pnpm-workspace.yaml` 是使用 **pnpm** 管理 Monorepo时的**核心配置文件**。
 
-只要在仓库根目录下放置该文件，pnpm 就会将当前项目识别为一个 Workspace 架构，并自动处理各子包之间的符号链接（Symlink）、本地依赖解析和批量指令执行。
+只要在仓库根目录下放置该文件，pnpm 就会将当前项目识别为一个 Workspace 架构。
 
 下面的配置声明 `apps` 与 `packages` 目录下的所有直接子项目，并排除测试目录：
 
