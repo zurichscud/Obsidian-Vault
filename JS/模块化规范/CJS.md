@@ -64,33 +64,35 @@ module.exports = { myFunction: function() {} }; // ✅ 正确替换导出对象
 
 ## 3. 模块加载机制
 
-### 3.1 加载流程
 
-1. **路径解析**：根据 `require()` 参数解析路径
-   - 核心模块（如 `fs`、`http`）直接加载
-   - 相对路径（`./math`）查找文件
-   - 第三方模块从 `node_modules` 查找
-2. **文件定位**：按顺序尝试 `.js` → `.json` → `.node`
-3. **编译执行**：编译并执行模块代码
-4. **缓存模块**：加载结果被缓存，后续 `require()` 直接返回缓存
 
-### 3.2 模块缓存
+CJS 是**执行到 `require` 那一行才加载**，边执行边加载。
 
-下面的示例验证缓存行为：两次 `require()` 得到同一实例，计数状态在两者之间共享：
 
 ```js
-// counter.js
-let count = 0;
-exports.increment = function() {
-  count++;
-  return count;
-};
-
-// app.js
-const counter1 = require('./counter');
-const counter2 = require('./counter');
-
-console.log(counter1.increment()); // 输出: 1
-console.log(counter2.increment()); // 输出: 2（共享同一实例）
-console.log(counter1 === counter2); // true
+// main.js
+console.log('main 开始');
+require('./a.js');
+console.log('main 中间');
+require('./b.js');
+console.log('main 结束');
 ```
+
+输出顺序：
+
+```
+main 开始
+a 执行
+main 中间
+b 执行
+main 结束
+```
+
+`require` 是**同步**的：读文件、编译、执行完这个模块，才会返回，后面的代码才能继续。
+
+所以：
+
+- **CJS**：`require` 写在哪、什么时候执行，就在那时加载。可以放在 `if` 里、函数里，也可以用变量拼路径。
+- **ESM 静态 `import`**：先全部加载，再执行，不受书写位置影响。
+
+这也是 CJS 无法做 Tree Shaking 的原因：不执行代码，就不知道会 `require` 什么。
