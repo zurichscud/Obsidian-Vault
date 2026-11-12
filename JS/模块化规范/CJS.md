@@ -96,3 +96,22 @@ main 结束
 - **ESM 静态 `import`**：先全部加载，再执行，不受书写位置影响。
 
 这也是 CJS 无法做 Tree Shaking 的原因：不执行代码，就不知道会 `require` 什么。
+
+## 缓存机制
+
+> require相同的模块会执行几次？
+
+**只执行一次。** 第一次 `require` 会执行模块并把结果存进 `require.cache`，之后再 `require` 同一个模块，直接返回缓存里的 `module.exports`，不会再执行。
+
+js
+
+```js
+// a.js
+console.log('a 执行了');
+module.exports = { n: 1 };
+
+// main.js
+const x = require('./a'); // 打印 "a 执行了"
+const y = require('./a'); // 不打印
+console.log(x === y);     // true
+```

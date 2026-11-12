@@ -118,3 +118,22 @@ main 开始
 ```
 
 因为 `import` 会被提升（hoist），依赖模块总是先于当前模块执行。
+
+## 缓存机制
+
+> require相同的模块会执行几次？
+
+
+模块按解析后的完整 URL 存进缓存，同一个 URL 只获取、执行一次，之后的 `import` 或 `import()` 拿到的都是同一个模块命名空间对象。
+
+
+```js
+// a.js
+console.log('a 执行了');
+export const n = 1;
+
+// main.js
+import './a.js';                 // 打印 "a 执行了"
+import './a.js';                 // 不打印
+const m = await import('./a.js'); // 不打印
+```
