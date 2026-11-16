@@ -1,0 +1,1855 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>防抖与节流 · Debounce / Throttle</title>
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07080a;
+    --panel: #0b0e12;
+    --panel-2: #0e1116;
+    --line: #232933;
+    --line-soft: #1a2028;
+    --ink: #ece8df;
+    --ink-2: #bebbb2;
+    --muted: #8d95a0;
+    --dim: #6a727e;
+    --deb: #5cd6e6;
+    --thr: #ffa270;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --serif: "Instrument Serif", "Songti SC", "STSong", Georgia, serif;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, .022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .022) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 8%, transparent 72%);
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 8%, transparent 72%);
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(900px 480px at 10% -12%, rgba(92, 214, 230, .06), transparent 62%),
+      radial-gradient(820px 460px at 98% -6%, rgba(255, 162, 112, .05), transparent 58%);
+  }
+
+  ::selection { background: rgba(92, 214, 230, .22); color: var(--ink); }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .22; }
+  }
+
+  @keyframes bump {
+    0% { transform: translateY(0); }
+    35% { transform: translateY(-4px); }
+    100% { transform: translateY(0); }
+  }
+
+  @keyframes ripple {
+    0% { transform: scale(.35); opacity: .85; }
+    100% { transform: scale(4.4); opacity: 0; }
+  }
+
+  @keyframes waitbar {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: 0 36px 64px;
+  }
+
+  .page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 36px;
+    right: 36px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--deb), rgba(255, 255, 255, .1) 45%, var(--thr));
+    opacity: .5;
+  }
+
+  /* ---------- topbar ---------- */
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 26px 0 0;
+    font-size: 9px;
+    letter-spacing: .22em;
+    color: var(--dim);
+  }
+
+  .topbar .side { display: flex; align-items: center; gap: 10px; }
+  .topbar .sep { color: #39414b; }
+  .topbar .live { color: #8b939e; }
+  .topbar .live i {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--deb);
+    box-shadow: 0 0 8px var(--deb);
+    animation: blink 2.8s ease-in-out infinite;
+    vertical-align: 1px;
+  }
+
+  /* ---------- hero ---------- */
+
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 60px;
+    padding: 54px 0 40px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 250px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--deb), var(--thr));
+    opacity: .65;
+  }
+
+  .hero-kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 20px;
+    font-size: 10px;
+    letter-spacing: .2em;
+    color: var(--dim);
+  }
+
+  .hero-kicker::before {
+    content: "";
+    width: 22px;
+    height: 1px;
+    background: var(--deb);
+  }
+
+  h1 {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(60px, 7vw, 88px);
+    font-weight: 400;
+    line-height: .9;
+    letter-spacing: .04em;
+    color: var(--ink);
+  }
+
+  h1 .slash {
+    font-size: .42em;
+    letter-spacing: 0;
+    color: var(--dim);
+    transform: translateY(-.34em);
+  }
+
+  h1 .outline {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: 1px rgba(236, 232, 223, .5);
+  }
+
+  .hero-copy {
+    max-width: 330px;
+    margin: 0 0 6px;
+    font-size: 11.5px;
+    line-height: 2;
+    color: var(--muted);
+  }
+
+  .hero-copy b { font-weight: 500; }
+  .c-deb { color: var(--deb); }
+  .c-thr { color: var(--thr); }
+
+  /* ---------- sections ---------- */
+
+  .section { margin-top: 46px; }
+
+  .sec-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .sec-head .num { font-size: 9.5px; letter-spacing: .18em; color: var(--dim); }
+  .sec-head .name { font-size: 10px; letter-spacing: .26em; color: var(--ink-2); }
+  .sec-head .rule { flex: 1; height: 1px; background: var(--line-soft); }
+  .sec-head .note { font-size: 9px; letter-spacing: .14em; color: var(--dim); }
+
+  /* ---------- lab ---------- */
+
+  .lab {
+    position: relative;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #0b0e12 0%, #090b0e 100%);
+  }
+
+  .lab::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(92, 214, 230, .6), rgba(255, 162, 112, .4) 55%, transparent 88%);
+    opacity: .7;
+  }
+
+  .lab-bar {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .bar-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: .22em;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .bar-label i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--deb);
+    box-shadow: 0 0 8px var(--deb);
+    animation: blink 2.4s ease-in-out infinite;
+  }
+
+  .controls {
+    display: flex;
+    flex: 1;
+    gap: 28px;
+    margin-left: 10px;
+  }
+
+  .ctl { display: block; width: 152px; }
+
+  .ctl .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 9px;
+    font-size: 9px;
+    letter-spacing: .12em;
+    color: var(--dim);
+  }
+
+  .ctl b { font-weight: 500; color: var(--c); letter-spacing: .04em; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 14px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: linear-gradient(90deg, var(--c) var(--p, 50%), #232932 var(--p, 50%));
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 9px;
+    height: 9px;
+    margin-top: -3.5px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0 3px rgba(7, 8, 10, .65), 0 0 9px var(--c);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: linear-gradient(90deg, var(--c) var(--p, 50%), #232932 var(--p, 50%));
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 9px;
+    height: 9px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--c);
+  }
+
+  input[type="range"]:focus-visible { outline: 1px dashed var(--c); outline-offset: 4px; }
+
+  .bar-actions { display: flex; gap: 8px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: color .18s, border-color .18s, background .18s;
+    white-space: nowrap;
+  }
+
+  .btn:hover { color: var(--ink); border-color: #3a424d; background: rgba(255, 255, 255, .02); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: progress; }
+  .btn:focus-visible { outline: 1px solid var(--ink-2); outline-offset: 2px; }
+
+  .btn.primary { color: var(--deb); border-color: rgba(92, 214, 230, .35); }
+  .btn.primary:hover { background: rgba(92, 214, 230, .06); border-color: var(--deb); }
+  .btn svg { display: block; }
+
+  /* ---------- pad ---------- */
+
+  .pad {
+    position: relative;
+    height: 252px;
+    margin: 16px;
+    border: 1px solid var(--line-soft);
+    background: #07090c;
+    overflow: hidden;
+    cursor: crosshair;
+    outline: none;
+  }
+
+  .pad:focus-visible { border-color: rgba(92, 214, 230, .5); }
+
+  .pad::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, .15) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: .42;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 25%, transparent 100%);
+    mask-image: radial-gradient(ellipse at 50% 50%, #000 25%, transparent 100%);
+  }
+
+  .pad::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 42%, transparent 28%, rgba(7, 9, 12, .62) 100%);
+  }
+
+  .pad .cross-x,
+  .pad .cross-y {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    background: rgba(236, 232, 223, .09);
+    transition: opacity .2s ease;
+    z-index: 2;
+  }
+
+  .pad .cross-x { left: 0; right: 0; top: var(--my, 50%); height: 1px; }
+  .pad .cross-y { top: 0; bottom: 0; left: var(--mx, 50%); width: 1px; }
+  .pad.tracking .cross-x,
+  .pad.tracking .cross-y { opacity: 1; }
+
+  .pad-hint {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    transition: opacity .35s ease, transform .35s ease;
+  }
+
+  .pad.used .pad-hint { opacity: 0; transform: translateY(8px); }
+
+  .pad-hint .big {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 36px;
+    letter-spacing: .06em;
+    color: rgba(236, 232, 223, .26);
+  }
+
+  .pad-hint .small {
+    font-size: 9.5px;
+    letter-spacing: .16em;
+    color: var(--dim);
+  }
+
+  .pad-meta {
+    position: absolute;
+    z-index: 3;
+    font-size: 8.5px;
+    letter-spacing: .2em;
+    color: var(--dim);
+    pointer-events: none;
+  }
+
+  .pad-meta.tl { top: 12px; left: 14px; }
+  .pad-meta.tr { top: 12px; right: 14px; display: flex; align-items: center; gap: 7px; color: #8b939e; }
+  .pad-meta.tr i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--thr);
+    box-shadow: 0 0 8px var(--thr);
+    animation: blink 2s ease-in-out infinite;
+  }
+  .pad-meta.bl { bottom: 12px; left: 14px; font-variant-numeric: tabular-nums; }
+
+  .ripples { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+  .ripple {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border: 1px solid rgba(236, 232, 223, .55);
+    border-radius: 50%;
+    animation: ripple .72s cubic-bezier(.2, .7, .2, 1) forwards;
+  }
+
+  /* ---------- timeline ---------- */
+
+  .timeline { padding: 4px 16px 5px; }
+
+  #timeline {
+    display: block;
+    width: 100%;
+    height: 232px;
+    cursor: default;
+  }
+
+  /* ---------- readout ---------- */
+
+  .readout {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid var(--line);
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 138px;
+    padding: 14px 22px;
+    border-right: 1px solid var(--line-soft);
+  }
+
+  .stat .k {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9px;
+    letter-spacing: .2em;
+    color: var(--dim);
+  }
+
+  .stat .k i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--c, #6b7380);
+  }
+
+  .stat .v {
+    display: block;
+    font-size: 27px;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat.deb { --c: var(--deb); }
+  .stat.thr { --c: var(--thr); }
+  .stat.deb .v { color: var(--deb); }
+  .stat.thr .v { color: var(--thr); }
+  .stat.bump .v { animation: bump .32s ease; }
+
+  .verdict {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 360px;
+    margin-left: auto;
+    padding: 12px 22px;
+    text-align: right;
+    font-size: 10px;
+    line-height: 1.7;
+    color: var(--muted);
+    letter-spacing: .02em;
+  }
+
+  .verdict b { color: var(--ink); font-weight: 500; }
+
+  .verdict .line { display: block; }
+
+  .verdict .sub {
+    margin-top: 3px;
+    font-size: 8.5px;
+    letter-spacing: .14em;
+    color: var(--dim);
+  }
+
+  /* ---------- duo ---------- */
+
+  .duo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #0b0e12, #090b0e);
+  }
+
+  .col { min-width: 0; padding: 26px 28px 30px; }
+  .col + .col { border-left: 1px solid var(--line); }
+  .col.deb { --c: var(--deb); }
+  .col.thr { --c: var(--thr); }
+
+  .col-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+
+  .kicker {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 9px;
+    letter-spacing: .24em;
+    color: var(--c);
+  }
+
+  .kicker::before {
+    content: "";
+    width: 18px;
+    height: 1px;
+    background: var(--c);
+  }
+
+  .edgetag {
+    padding: 3px 6px;
+    border: 1px solid var(--line);
+    font-size: 7.5px;
+    letter-spacing: .18em;
+    color: var(--dim);
+  }
+
+  h2 {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin: 0 0 10px;
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: .05em;
+    color: var(--ink);
+  }
+
+  h2 small {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 400;
+    letter-spacing: .16em;
+    color: var(--dim);
+  }
+
+  .def {
+    max-width: 46ch;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+
+  .def b { color: var(--c); font-weight: 500; }
+
+  .uses {
+    margin: 12px 0 18px;
+    font-size: 9px;
+    letter-spacing: .1em;
+    color: var(--dim);
+  }
+
+  .mini {
+    margin-bottom: 20px;
+    padding: 10px 10px 6px;
+    border: 1px solid var(--line-soft);
+    background: #07090c;
+  }
+
+  .mini svg { display: block; width: 100%; height: auto; }
+
+  .demo { border-top: 1px solid var(--line-soft); padding-top: 16px; }
+
+  .demo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 9px;
+    letter-spacing: .16em;
+    color: var(--dim);
+  }
+
+  .demo-head .label { color: var(--ink-2); }
+
+  /* ---------- search demo ---------- */
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    background: #07090c;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .search-box:focus-within {
+    border-color: rgba(92, 214, 230, .5);
+    box-shadow: 0 0 0 3px rgba(92, 214, 230, .05);
+  }
+
+  .search-box svg {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    fill: none;
+    stroke: var(--dim);
+    stroke-width: 1.3;
+    stroke-linecap: round;
+  }
+
+  .search-box input {
+    flex: 1;
+    height: 100%;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: none;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .02em;
+  }
+
+  .search-box input::placeholder { color: #626b77; }
+
+  .search-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    font-size: 8.5px;
+    letter-spacing: .12em;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .search-status.waiting { color: var(--deb); }
+
+  .search-status .spark {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0;
+  }
+
+  .search-status.waiting .spark {
+    opacity: 1;
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  .search-track {
+    height: 1px;
+    margin-top: -1px;
+    background: #151a21;
+    overflow: hidden;
+  }
+
+  .search-track i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--deb);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .search-track i.run { animation: waitbar .4s linear forwards; }
+
+  .meta {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-top: 10px;
+    font-size: 8.5px;
+    letter-spacing: .14em;
+    color: var(--dim);
+  }
+
+  .meta b { color: var(--ink-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .meta .right { margin-left: auto; }
+
+  .results {
+    list-style: none;
+    height: 150px;
+    margin: 12px 0 0;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid var(--line-soft);
+    background: #07090c;
+    scrollbar-width: thin;
+    scrollbar-color: #2a3038 transparent;
+  }
+
+  .results::-webkit-scrollbar { width: 6px; }
+  .results::-webkit-scrollbar-thumb { background: #2a3038; }
+
+  .results li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, .03);
+    font-size: 10.5px;
+  }
+
+  .results li:last-child { border-bottom: 0; }
+
+  .results .idx { color: #3f4751; font-size: 8px; }
+  .results .term { color: var(--ink); font-weight: 500; white-space: nowrap; }
+
+  .results .zh {
+    margin-left: auto;
+    overflow: hidden;
+    font-size: 9.5px;
+    color: var(--dim);
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .results mark {
+    padding: 0 1px;
+    border-radius: 1px;
+    background: rgba(92, 214, 230, .16);
+    color: var(--deb);
+  }
+
+  .results li.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 24px;
+    border: 0;
+    color: #6a7480;
+    font-size: 9.5px;
+    letter-spacing: .04em;
+    text-align: center;
+  }
+
+  /* ---------- scroll demo ---------- */
+
+  .scroll-shell {
+    position: relative;
+    border: 1px solid var(--line-soft);
+    background: #07090c;
+  }
+
+  .scroll-view {
+    height: 186px;
+    overflow-y: auto;
+    outline: none;
+    scrollbar-width: thin;
+    scrollbar-color: #2a3038 transparent;
+  }
+
+  .scroll-view:focus-visible { box-shadow: inset 0 0 0 1px rgba(255, 162, 112, .35); }
+  .scroll-view::-webkit-scrollbar { width: 6px; }
+  .scroll-view::-webkit-scrollbar-thumb { background: #2a3038; }
+
+  .logrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, .03);
+    font-size: 10px;
+    color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .logrow:last-child { border-bottom: 0; }
+  .logrow .n { width: 18px; color: #3f4751; font-size: 8px; }
+  .logrow .m { width: 34px; color: #79828e; font-size: 8px; letter-spacing: .06em; }
+  .logrow .p { color: #99a1ac; overflow: hidden; text-overflow: ellipsis; }
+  .logrow .t { margin-left: auto; color: #4d5761; font-size: 8px; }
+
+  .scroll-meter {
+    height: 2px;
+    margin-top: 10px;
+    background: #161b22;
+    overflow: hidden;
+  }
+
+  .scroll-meter i {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--thr), #ffd0a8);
+    transition: width .12s linear;
+  }
+
+  /* ---------- footer ---------- */
+
+  .foot { margin-top: 56px; border-top: 1px solid var(--line-soft); padding-top: 22px; }
+
+  .foot-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .foot-motto {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 20px;
+    letter-spacing: .08em;
+    color: var(--ink-2);
+  }
+
+  .foot-meta { font-size: 8px; letter-spacing: .2em; color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="side">
+      <span>FRONTEND NOTES</span>
+      <span class="sep">/</span>
+      <span>PERFORMANCE</span>
+    </div>
+    <div class="side">
+      <span class="live"><i></i>LIVE DEMO</span>
+      <span class="sep">/</span>
+      <span>002 — INPUT FREQUENCY</span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div>
+      <p class="hero-kicker">两个高频事件的处方</p>
+      <h1>防抖 <span class="slash">/</span> <span class="outline">节流</span></h1>
+    </div>
+    <p class="hero-copy">
+      同一串密集事件，两种处理时机。<br />
+      <b class="c-deb">防抖</b>等到安静再执行，<b class="c-thr">节流</b>按固定节奏执行。<br />
+      目标一致：不要让每次输入都变成一次执行。
+    </p>
+  </header>
+
+  <!-- 01 -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="num">01</span>
+      <span class="name">交互实验</span>
+      <span class="rule"></span>
+      <span class="note">真实计时 · 可交互</span>
+    </div>
+
+    <div class="lab">
+      <div class="lab-bar">
+        <div class="bar-label"><i></i>SIGNAL LAB</div>
+
+        <div class="controls">
+          <label class="ctl" style="--c: var(--deb)">
+            <span class="row"><span>防抖等待</span><b id="debVal">300 ms</b></span>
+            <input id="debRange" type="range" min="80" max="800" step="20" value="300" aria-label="防抖等待时间" />
+          </label>
+          <label class="ctl" style="--c: var(--thr)">
+            <span class="row"><span>节流间隔</span><b id="thrVal">300 ms</b></span>
+            <input id="thrRange" type="range" min="80" max="800" step="20" value="300" aria-label="节流间隔时间" />
+          </label>
+        </div>
+
+        <div class="bar-actions">
+          <button class="btn primary" id="burstBtn" type="button">
+            <svg width="7" height="8" viewBox="0 0 7 8" fill="currentColor" aria-hidden="true"><path d="M0 0l7 4L0 8z"/></svg>
+            模拟连点
+          </button>
+          <button class="btn" id="resetBtn" type="button">清空</button>
+        </div>
+      </div>
+
+      <div class="pad" id="pad" tabindex="0" aria-label="输入演示区，快速点击或移动鼠标可产生高频事件">
+        <div class="cross-x"></div>
+        <div class="cross-y"></div>
+        <div class="pad-hint">
+          <span class="big">Move / Click</span>
+          <span class="small">快速点击或移动鼠标 — 观察三条轨道</span>
+        </div>
+        <div class="pad-meta tl">INPUT SURFACE</div>
+        <div class="pad-meta tr"><i></i>LIVE</div>
+        <div class="pad-meta bl" id="padCoord">x --- · y ---</div>
+        <div class="ripples" id="ripples"></div>
+      </div>
+
+      <div class="timeline">
+        <canvas id="timeline" aria-hidden="true"></canvas>
+      </div>
+
+      <div class="readout">
+        <div class="stat raw">
+          <span class="k">原始事件</span>
+          <span class="v" id="rawCount">0</span>
+        </div>
+        <div class="stat deb" id="debStat">
+          <span class="k"><i></i>防抖执行</span>
+          <span class="v" id="debCount">0</span>
+        </div>
+        <div class="stat thr" id="thrStat">
+          <span class="k"><i></i>节流执行</span>
+          <span class="v" id="thrCount">0</span>
+        </div>
+        <div class="verdict" id="verdict">
+          <span class="line"><b>等待输入</b></span>
+          <span class="sub">点击或移动上方区域</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="section">
+    <div class="sec-head">
+      <span class="num">02</span>
+      <span class="name">两种策略</span>
+      <span class="rule"></span>
+      <span class="note">定义 / 时序 / 场景</span>
+    </div>
+
+    <div class="duo">
+      <!-- debounce -->
+      <section class="col deb">
+        <div class="col-top">
+          <span class="kicker">DEBOUNCE</span>
+          <span class="edgetag">TRAILING</span>
+        </div>
+
+        <h2>防抖 <small>等你停下来</small></h2>
+        <p class="def">
+          事件不断到来时，每次都<b>重置倒计时</b>。直到安静满
+          <b><span id="debDef">300</span> ms</b>，才执行最后一次。
+        </p>
+        <div class="uses">搜索联想 · 表单校验 · 窗口 resize</div>
+
+        <div class="mini" aria-hidden="true">
+          <svg viewBox="0 0 440 92" role="img">
+            <line x1="16" y1="64" x2="424" y2="64" stroke="rgba(255,255,255,.07)" />
+            <g stroke="#5b6673" stroke-width="1">
+              <line x1="80" y1="50" x2="80" y2="64" />
+              <line x1="116" y1="50" x2="116" y2="64" />
+              <line x1="152" y1="50" x2="152" y2="64" />
+              <line x1="188" y1="50" x2="188" y2="64" />
+              <line x1="224" y1="50" x2="224" y2="64" />
+            </g>
+            <g fill="#7c8694">
+              <circle cx="80" cy="47" r="2" />
+              <circle cx="116" cy="47" r="2" />
+              <circle cx="152" cy="47" r="2" />
+              <circle cx="188" cy="47" r="2" />
+              <circle cx="224" cy="47" r="2" />
+            </g>
+            <path d="M224 74 V80 H320 V74" fill="none" stroke="rgba(92,214,230,.5)" stroke-width="1" />
+            <text x="272" y="90" fill="rgba(92,214,230,.62)" font-family="'IBM Plex Mono', monospace" font-size="6.5" letter-spacing="1.2" text-anchor="middle">QUIET WINDOW</text>
+            <line x1="320" y1="52" x2="320" y2="64" stroke="rgba(92,214,230,.35)" />
+            <circle cx="320" cy="47" r="9" fill="rgba(92,214,230,.1)" />
+            <circle cx="320" cy="47" r="3.6" fill="#5cd6e6" />
+            <text x="334" y="34" fill="rgba(92,214,230,.85)" font-family="'IBM Plex Mono', monospace" font-size="7.5" letter-spacing=".6">RUN ×1</text>
+            <text x="80" y="24" fill="#5a636e" font-family="'IBM Plex Mono', monospace" font-size="6.5" letter-spacing="1.2">EVENTS</text>
+          </svg>
+        </div>
+
+        <div class="demo">
+          <div class="demo-head">
+            <span class="label">搜索联想</span>
+            <span>DEBOUNCE · 400ms</span>
+          </div>
+
+          <div class="search-box">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.4" /><path d="M10.4 10.4 14 14" /></svg>
+            <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="输入 debounce / 闭包 / 渲染…" aria-label="搜索术语" />
+            <span class="search-status" id="searchStatus"><i class="spark"></i><span id="searchStatusText">idle</span></span>
+          </div>
+          <div class="search-track"><i id="searchFill"></i></div>
+
+          <div class="meta">
+            <span>输入 <b id="searchKeys">0</b></span>
+            <span>请求 <b id="searchReqs">0</b></span>
+            <span class="right">节省 <b id="searchSave">0%</b></span>
+          </div>
+
+          <ul class="results" id="searchResults">
+            <li class="empty">输入关键词，停止 400ms 后才会发起请求</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- throttle -->
+      <section class="col thr">
+        <div class="col-top">
+          <span class="kicker">THROTTLE</span>
+          <span class="edgetag">LEADING</span>
+        </div>
+
+        <h2>节流 <small>按拍子出手</small></h2>
+        <p class="def">
+          固定时间窗口内<b>最多执行一次</b>。事件再密，执行频率也不会超过
+          <b><span id="thrDef">300</span> ms</b> 一次的上限。
+        </p>
+        <div class="uses">滚动监听 · 拖拽 · 鼠标移动</div>
+
+        <div class="mini" aria-hidden="true">
+          <svg viewBox="0 0 440 92" role="img">
+            <line x1="16" y1="64" x2="424" y2="64" stroke="rgba(255,255,255,.07)" />
+            <g stroke="#5b6673" stroke-width="1">
+              <line x1="48" y1="50" x2="48" y2="64" />
+              <line x1="70" y1="50" x2="70" y2="64" />
+              <line x1="92" y1="50" x2="92" y2="64" />
+              <line x1="114" y1="50" x2="114" y2="64" />
+              <line x1="136" y1="50" x2="136" y2="64" />
+              <line x1="158" y1="50" x2="158" y2="64" />
+              <line x1="180" y1="50" x2="180" y2="64" />
+              <line x1="202" y1="50" x2="202" y2="64" />
+              <line x1="224" y1="50" x2="224" y2="64" />
+              <line x1="246" y1="50" x2="246" y2="64" />
+              <line x1="268" y1="50" x2="268" y2="64" />
+              <line x1="290" y1="50" x2="290" y2="64" />
+              <line x1="312" y1="50" x2="312" y2="64" />
+              <line x1="334" y1="50" x2="334" y2="64" />
+            </g>
+            <g fill="#7c8694">
+              <circle cx="48" cy="47" r="2" />
+              <circle cx="70" cy="47" r="2" />
+              <circle cx="92" cy="47" r="2" />
+              <circle cx="114" cy="47" r="2" />
+              <circle cx="136" cy="47" r="2" />
+              <circle cx="158" cy="47" r="2" />
+              <circle cx="180" cy="47" r="2" />
+              <circle cx="202" cy="47" r="2" />
+              <circle cx="224" cy="47" r="2" />
+              <circle cx="246" cy="47" r="2" />
+              <circle cx="268" cy="47" r="2" />
+              <circle cx="290" cy="47" r="2" />
+              <circle cx="312" cy="47" r="2" />
+              <circle cx="334" cy="47" r="2" />
+            </g>
+            <path d="M48 74 V80 H138 V74 M138 80 H228 V74 M228 80 H318 V74" fill="none" stroke="rgba(255,162,112,.42)" stroke-width="1" />
+            <text x="183" y="90" fill="rgba(255,162,112,.6)" font-family="'IBM Plex Mono', monospace" font-size="6.5" letter-spacing="1.2" text-anchor="middle">FIXED INTERVAL</text>
+            <g>
+              <line x1="48" y1="52" x2="48" y2="64" stroke="rgba(255,162,112,.35)" />
+              <line x1="138" y1="52" x2="138" y2="64" stroke="rgba(255,162,112,.35)" />
+              <line x1="228" y1="52" x2="228" y2="64" stroke="rgba(255,162,112,.35)" />
+              <line x1="318" y1="52" x2="318" y2="64" stroke="rgba(255,162,112,.35)" />
+              <g fill="rgba(255,162,112,.1)">
+                <circle cx="48" cy="47" r="8" />
+                <circle cx="138" cy="47" r="8" />
+                <circle cx="228" cy="47" r="8" />
+                <circle cx="318" cy="47" r="8" />
+              </g>
+              <g fill="#ffa270">
+                <circle cx="48" cy="47" r="3.4" />
+                <circle cx="138" cy="47" r="3.4" />
+                <circle cx="228" cy="47" r="3.4" />
+                <circle cx="318" cy="47" r="3.4" />
+              </g>
+            </g>
+            <text x="332" y="34" fill="rgba(255,162,112,.85)" font-family="'IBM Plex Mono', monospace" font-size="7.5" letter-spacing=".6">RUN ×4</text>
+            <text x="48" y="24" fill="#5a636e" font-family="'IBM Plex Mono', monospace" font-size="6.5" letter-spacing="1.2">EVENTS</text>
+          </svg>
+        </div>
+
+        <div class="demo">
+          <div class="demo-head">
+            <span class="label">滚动监听</span>
+            <span>THROTTLE · 100ms</span>
+          </div>
+
+          <div class="scroll-shell">
+            <div class="scroll-view" id="scrollView" tabindex="0" aria-label="可滚动日志列表">
+              <div id="scrollInner"></div>
+            </div>
+          </div>
+          <div class="scroll-meter"><i id="scrollFill"></i></div>
+
+          <div class="meta">
+            <span>事件 <b id="scrollRaw">0</b></span>
+            <span>执行 <b id="scrollThr">0</b></span>
+            <span class="right">位置 <b id="scrollPos">0px</b></span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="foot-row">
+      <p class="foot-motto">时机，也是性能的一部分。</p>
+      <span class="foot-meta">DEBOUNCE / THROTTLE — 2026</span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const fmt = (n) => Number(n).toLocaleString("en-US");
+  const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+  /* ============================================================
+     controls
+  ============================================================ */
+
+  const state = {
+    debounce: 300,
+    throttle: 300,
+    burstId: 0,
+    lastRipple: 0
+  };
+
+  const debRange = $("#debRange");
+  const thrRange = $("#thrRange");
+  const debVal = $("#debVal");
+  const thrVal = $("#thrVal");
+  const debDef = $("#debDef");
+  const thrDef = $("#thrDef");
+
+  function paintRange(el) {
+    const min = +el.min;
+    const max = +el.max;
+    const pct = ((+el.value - min) / (max - min)) * 100;
+    el.style.setProperty("--p", pct.toFixed(1) + "%");
+  }
+
+  function bindRange(el, key, out, copy) {
+    paintRange(el);
+    el.addEventListener("input", () => {
+      state[key] = +el.value;
+      out.textContent = el.value + " ms";
+      copy.textContent = el.value;
+      paintRange(el);
+    });
+  }
+
+  bindRange(debRange, "debounce", debVal, debDef);
+  bindRange(thrRange, "throttle", thrVal, thrDef);
+
+  /* ============================================================
+     lab
+  ============================================================ */
+
+  const lab = {
+    raw: [],
+    deb: [],
+    thr: [],
+    counts: { raw: 0, deb: 0, thr: 0 },
+    debTimer: null,
+    pendingUntil: 0,
+    lastRawAt: 0,
+    lastThrAt: -1e9
+  };
+
+  const pad = $("#pad");
+  const ripples = $("#ripples");
+  const padCoord = $("#padCoord");
+  const rawCountEl = $("#rawCount");
+  const debCountEl = $("#debCount");
+  const thrCountEl = $("#thrCount");
+  const verdictEl = $("#verdict");
+  const debStat = $("#debStat");
+  const thrStat = $("#thrStat");
+  const burstBtn = $("#burstBtn");
+  const resetBtn = $("#resetBtn");
+
+  function bump(el) {
+    el.classList.remove("bump");
+    void el.offsetWidth;
+    el.classList.add("bump");
+  }
+
+  function syncStats() {
+    rawCountEl.textContent = fmt(lab.counts.raw);
+    debCountEl.textContent = fmt(lab.counts.deb);
+    thrCountEl.textContent = fmt(lab.counts.thr);
+
+    if (lab.counts.raw === 0) {
+      verdictEl.innerHTML = '<span class="line"><b>等待输入</b></span><span class="sub">点击或移动上方区域</span>';
+      return;
+    }
+
+    const debSkip = Math.max(0, lab.counts.raw - lab.counts.deb);
+    const thrSkip = Math.max(0, lab.counts.raw - lab.counts.thr);
+    verdictEl.innerHTML =
+      '<span class="line">防抖减少 <b>' + fmt(debSkip) + "</b> 次调用</span>" +
+      '<span class="sub">节流减少 ' + fmt(thrSkip) + " 次 · 共 " + fmt(lab.counts.raw) + " 个原始事件</span>";
+  }
+
+  function addRipple(x, y, force) {
+    const now = performance.now();
+    if (!force && now - state.lastRipple < 50) return;
+    state.lastRipple = now;
+
+    const ripple = document.createElement("span");
+    ripple.className = "ripple";
+    ripple.style.left = x + "px";
+    ripple.style.top = y + "px";
+    ripples.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 780);
+  }
+
+  function recordEvent() {
+    const t = performance.now();
+    const delay = state.debounce;
+    const interval = state.throttle;
+
+    lab.raw.push(t);
+    lab.counts.raw++;
+    lab.lastRawAt = t;
+
+    // debounce · trailing
+    clearTimeout(lab.debTimer);
+    lab.pendingUntil = t + delay;
+    lab.debTimer = setTimeout(() => {
+      const firedAt = performance.now();
+      lab.deb.push({ t: firedAt, d: delay });
+      lab.counts.deb++;
+      lab.debTimer = null;
+      lab.pendingUntil = 0;
+      bump(debStat);
+      syncStats();
+    }, delay);
+
+    // throttle · leading
+    if (t - lab.lastThrAt >= interval) {
+      lab.lastThrAt = t;
+      lab.thr.push({ t, i: interval });
+      lab.counts.thr++;
+      bump(thrStat);
+    }
+
+    const cutoff = t - 8000;
+    while (lab.raw.length && lab.raw[0] < cutoff) lab.raw.shift();
+    while (lab.deb.length && lab.deb[0].t < cutoff) lab.deb.shift();
+    while (lab.thr.length && lab.thr[0].t < cutoff) lab.thr.shift();
+
+    pad.classList.add("used");
+    syncStats();
+  }
+
+  function padPoint(e) {
+    const rect = pad.getBoundingClientRect();
+    return [e.clientX - rect.left, e.clientY - rect.top];
+  }
+
+  function handlePadInput(x, y, forceRipple) {
+    addRipple(x, y, forceRipple);
+    recordEvent();
+  }
+
+  pad.addEventListener("pointerdown", (e) => {
+    const [x, y] = padPoint(e);
+    handlePadInput(x, y, true);
+  });
+
+  pad.addEventListener("pointermove", (e) => {
+    const [x, y] = padPoint(e);
+    pad.classList.add("tracking");
+    pad.style.setProperty("--mx", x + "px");
+    pad.style.setProperty("--my", y + "px");
+    padCoord.textContent = "x " + String(Math.round(x)).padStart(3, "0") + " · y " + String(Math.round(y)).padStart(3, "0");
+    handlePadInput(x, y, false);
+  });
+
+  pad.addEventListener("pointerleave", () => {
+    pad.classList.remove("tracking");
+    padCoord.textContent = "x --- · y ---";
+  });
+
+  pad.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    const rect = pad.getBoundingClientRect();
+    handlePadInput(rect.width / 2, rect.height / 2, true);
+  });
+
+  function randomPadPoint() {
+    const rect = pad.getBoundingClientRect();
+    return [
+      rect.width * 0.18 + Math.random() * rect.width * 0.64,
+      rect.height * 0.24 + Math.random() * rect.height * 0.5
+    ];
+  }
+
+  const BURST_GAPS = [0, 45, 32, 60, 38, 52, 70, 34, 44, 58, 40, 30, 62, 46, 36];
+
+  function runBurst() {
+    const id = ++state.burstId;
+    burstBtn.disabled = true;
+    burstBtn.textContent = "模拟中…";
+
+    let i = 0;
+    const step = () => {
+      if (id !== state.burstId) return;
+
+      const [x, y] = randomPadPoint();
+      addRipple(x, y, true);
+      recordEvent();
+
+      i++;
+      if (i < BURST_GAPS.length) {
+        setTimeout(step, BURST_GAPS[i]);
+      } else {
+        setTimeout(() => {
+          if (id !== state.burstId) return;
+          burstBtn.disabled = false;
+          burstBtn.innerHTML = '<svg width="7" height="8" viewBox="0 0 7 8" fill="currentColor" aria-hidden="true"><path d="M0 0l7 4L0 8z"/></svg>模拟连点';
+        }, 140);
+      }
+    };
+
+    setTimeout(step, 80);
+  }
+
+  function resetLab() {
+    state.burstId++;
+    clearTimeout(lab.debTimer);
+    lab.debTimer = null;
+    lab.pendingUntil = 0;
+    lab.lastRawAt = 0;
+    lab.lastThrAt = -1e9;
+    lab.raw.length = 0;
+    lab.deb.length = 0;
+    lab.thr.length = 0;
+    lab.counts.raw = 0;
+    lab.counts.deb = 0;
+    lab.counts.thr = 0;
+
+    rippleReset();
+    pad.classList.remove("used");
+    pad.classList.remove("tracking");
+    padCoord.textContent = "x --- · y ---";
+    burstBtn.disabled = false;
+    burstBtn.innerHTML = '<svg width="7" height="8" viewBox="0 0 7 8" fill="currentColor" aria-hidden="true"><path d="M0 0l7 4L0 8z"/></svg>模拟连点';
+    syncStats();
+  }
+
+  function rippleReset() {
+    ripples.innerHTML = "";
+  }
+
+  burstBtn.addEventListener("click", runBurst);
+  resetBtn.addEventListener("click", resetLab);
+
+  syncStats();
+
+  /* ============================================================
+     timeline canvas
+  ============================================================ */
+
+  const canvas = $("#timeline");
+  const ctx = canvas.getContext("2d");
+
+  const CW = 232;
+  const AXIS = 206;
+  const ROW_RAW = 52;
+  const ROW_DEB = 114;
+  const ROW_THR = 176;
+  const WINDOW = 6000;
+
+  let cssW = 0;
+  let dpr = 1;
+
+  function resizeCanvas() {
+    cssW = canvas.getBoundingClientRect().width;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(CW * dpr);
+  }
+
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(resizeCanvas).observe(canvas);
+  } else {
+    window.addEventListener("resize", resizeCanvas);
+  }
+  resizeCanvas();
+
+  function spaced(text, x, y, gap, color, align = "left") {
+    ctx.font = '8px "IBM Plex Mono", monospace';
+    ctx.fillStyle = color;
+    ctx.textAlign = "left";
+    const chars = Array.from(text);
+    const widths = chars.map((ch) => ctx.measureText(ch).width);
+    const total = widths.reduce((a, b) => a + b, 0) + gap * Math.max(0, chars.length - 1);
+    let cx = align === "right" ? x - total : align === "center" ? x - total / 2 : x;
+    chars.forEach((ch, i) => {
+      ctx.fillText(ch, cx, y);
+      cx += widths[i] + gap;
+    });
+  }
+
+  function glowDot(x, y, color) {
+    ctx.save();
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function fireRipple(x, y, firedAt, now, rgb) {
+    const age = now - firedAt;
+    if (age < 0 || age > 650) return;
+    const e = age / 650;
+    ctx.beginPath();
+    ctx.arc(x, y, 5 + e * 16, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(" + rgb + "," + (0.42 * (1 - e)).toFixed(3) + ")";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function draw(now) {
+    if (!cssW) return;
+
+    const pruneCutoff = now - 8200;
+    while (lab.raw.length && lab.raw[0] < pruneCutoff) lab.raw.shift();
+    while (lab.deb.length && lab.deb[0].t < pruneCutoff) lab.deb.shift();
+    while (lab.thr.length && lab.thr[0].t < pruneCutoff) lab.thr.shift();
+
+    const w = cssW;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, CW);
+
+    const L = 92;
+    const R = Math.max(L + 140, w - 16);
+    const span = R - L;
+    const xAt = (t) => R - ((now - t) / WINDOW) * span;
+
+    spaced("EVENT TIMELINE", 12, 16, 1.6, "rgba(146,155,166,.82)");
+    spaced("LAST 6S", R, 16, 1.6, "rgba(146,155,166,.55)", "right");
+
+    // horizontal guides
+    [ROW_RAW, ROW_DEB, ROW_THR].forEach((y) => {
+      ctx.strokeStyle = "rgba(255,255,255,.045)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(L, y + 0.5);
+      ctx.lineTo(R, y + 0.5);
+      ctx.stroke();
+    });
+
+    // vertical grid + axis labels
+    for (let k = 0; k <= 6; k++) {
+      const gx = R - (k / 6) * span;
+      ctx.strokeStyle = k === 0 ? "rgba(255,255,255,.09)" : "rgba(255,255,255,.032)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(gx + 0.5, 28);
+      ctx.lineTo(gx + 0.5, AXIS);
+      ctx.stroke();
+
+      if (k % 2 === 0) {
+        ctx.fillStyle = "rgba(136,146,158,.8)";
+        ctx.font = '8.5px "IBM Plex Mono", monospace';
+        ctx.textAlign = k === 0 ? "right" : "center";
+        ctx.fillText(k === 0 ? "现在" : "-" + k + "s", gx, AXIS + 17);
+      }
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,.08)";
+    ctx.beginPath();
+    ctx.moveTo(L, AXIS + 0.5);
+    ctx.lineTo(R, AXIS + 0.5);
+    ctx.stroke();
+
+    spaced("RAW EVENT", 12, ROW_RAW + 3, 1.4, "rgba(150,159,170,.85)");
+    spaced("DEBOUNCE", 12, ROW_DEB + 3, 1.4, "rgba(92,214,230,.85)");
+    spaced("THROTTLE", 12, ROW_THR + 3, 1.4, "rgba(255,162,112,.85)");
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(L, 26, span, AXIS - 26);
+    ctx.clip();
+
+    if (lab.counts.raw === 0) {
+      spaced("AWAITING SIGNAL", (L + R) / 2, 88, 2.2, "rgba(158,168,180,.5)", "center");
+    }
+
+    // raw ticks, batched by freshness
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(150,160,172,.38)";
+    ctx.beginPath();
+    for (const t of lab.raw) {
+      if (t < now - WINDOW) continue;
+      if (now - t < 260) continue;
+      const px = xAt(t);
+      if (px < L - 1 || px > R + 1) continue;
+      ctx.moveTo(px, ROW_RAW - 6);
+      ctx.lineTo(px, ROW_RAW + 6);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(236,232,223,.78)";
+    ctx.beginPath();
+    for (const t of lab.raw) {
+      if (now - t >= 260 || t < now - WINDOW) continue;
+      const px = xAt(t);
+      if (px < L - 1 || px > R + 1) continue;
+      ctx.moveTo(px, ROW_RAW - 6);
+      ctx.lineTo(px, ROW_RAW + 6);
+    }
+    ctx.stroke();
+
+    // debounce fires
+    for (const f of lab.deb) {
+      if (f.t < now - WINDOW) continue;
+      const fx = xAt(f.t);
+      if (fx < L - 20) continue;
+      const sx = Math.max(L, xAt(f.t - f.d));
+
+      ctx.strokeStyle = "rgba(92,214,230,.24)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sx, 133.5);
+      ctx.lineTo(fx, 133.5);
+      ctx.moveTo(sx, 129.5);
+      ctx.lineTo(sx, 137.5);
+      ctx.moveTo(fx, 129.5);
+      ctx.lineTo(fx, 137.5);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(92,214,230,.28)";
+      ctx.beginPath();
+      ctx.moveTo(fx, ROW_DEB + 5);
+      ctx.lineTo(fx, 129);
+      ctx.stroke();
+
+      glowDot(fx, ROW_DEB, "#5cd6e6");
+      fireRipple(fx, ROW_DEB, f.t, now, "92,214,230");
+    }
+
+    // throttle fires
+    for (const f of lab.thr) {
+      if (f.t < now - WINDOW) continue;
+      const fx = xAt(f.t);
+      if (fx < L - 20) continue;
+      const ex = Math.min(R, xAt(f.t + f.i));
+
+      ctx.strokeStyle = "rgba(255,162,112,.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(fx, 161.5);
+      ctx.lineTo(ex, 161.5);
+      ctx.moveTo(fx, 157.5);
+      ctx.lineTo(fx, 165.5);
+      ctx.moveTo(ex, 157.5);
+      ctx.lineTo(ex, 165.5);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,162,112,.28)";
+      ctx.beginPath();
+      ctx.moveTo(fx, ROW_THR - 5);
+      ctx.lineTo(fx, 165);
+      ctx.stroke();
+
+      glowDot(fx, ROW_THR, "#ffa270");
+      fireRipple(fx, ROW_THR, f.t, now, "255,162,112");
+    }
+
+    // pending debounce window
+    if (lab.debTimer && lab.pendingUntil > now && lab.lastRawAt !== 0) {
+      const px = Math.max(L, xAt(lab.lastRawAt));
+      const alpha = 0.16 + 0.1 * (0.5 + 0.5 * Math.sin(now / 170));
+
+      ctx.setLineDash([2, 4]);
+      ctx.strokeStyle = "rgba(92,214,230," + alpha.toFixed(3) + ")";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, 133.5);
+      ctx.lineTo(R, 133.5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.beginPath();
+      ctx.arc(R - 3.5, 133.5, 2.4, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(92,214,230,.6)";
+      ctx.stroke();
+    }
+
+    // fade older ticks on the left
+    const grad = ctx.createLinearGradient(L, 0, L + 70, 0);
+    grad.addColorStop(0, "#0a0c0f");
+    grad.addColorStop(1, "rgba(10,12,15,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(L, 26, 70, AXIS - 26);
+
+    ctx.restore();
+  }
+
+  // lastRawAt is part of lab state now
+
+  function frame() {
+    draw(performance.now());
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  /* ============================================================
+     search demo · debounce 400ms
+  ============================================================ */
+
+  const GLOSSARY = [
+    { term: "debounce", zh: "防抖：等事件停下来再执行" },
+    { term: "throttle", zh: "节流：固定频率执行" },
+    { term: "requestAnimationFrame", zh: "浏览器渲染帧回调" },
+    { term: "closure", zh: "闭包：函数记住词法作用域" },
+    { term: "event loop", zh: "事件循环：任务与微任务" },
+    { term: "virtual list", zh: "虚拟列表：只渲染可见项" },
+    { term: "Web Worker", zh: "后台线程：不阻塞主线程" },
+    { term: "ResizeObserver", zh: "尺寸变化观察器" },
+    { term: "memoization", zh: "记忆化：缓存计算结果" },
+    { term: "AbortController", zh: "取消请求与事件监听" },
+    { term: "passive listener", zh: "被动监听：不阻塞滚动" },
+    { term: "layout thrashing", zh: "布局抖动：强制同步重排" }
+  ];
+
+  const searchInput = $("#searchInput");
+  const searchResults = $("#searchResults");
+  const searchStatus = $("#searchStatus");
+  const searchStatusText = $("#searchStatusText");
+  const searchFill = $("#searchFill");
+  const searchKeysEl = $("#searchKeys");
+  const searchReqsEl = $("#searchReqs");
+  const searchSaveEl = $("#searchSave");
+
+  let searchTimer = null;
+  let searchKeys = 0;
+  let searchReqs = 0;
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+
+  function highlight(text, needle) {
+    if (!needle) return esc(text);
+    const idx = text.toLowerCase().indexOf(needle.toLowerCase());
+    if (idx < 0) return esc(text);
+    return esc(text.slice(0, idx)) +
+      "<mark>" + esc(text.slice(idx, idx + needle.length)) + "</mark>" +
+      esc(text.slice(idx + needle.length));
+  }
+
+  function renderSearchEmpty(msg) {
+    searchResults.innerHTML = '<li class="empty">' + esc(msg) + "</li>";
+  }
+
+  function updateSearchSave() {
+    const pct = searchKeys ? Math.round((1 - searchReqs / searchKeys) * 100) : 0;
+    searchSaveEl.textContent = pct + "%";
+  }
+
+  searchInput.addEventListener("input", () => {
+    searchKeys++;
+    searchKeysEl.textContent = searchKeys;
+
+    const query = searchInput.value.trim();
+    clearTimeout(searchTimer);
+    searchFill.classList.remove("run");
+
+    if (!query) {
+      searchStatus.classList.remove("waiting");
+      searchStatusText.textContent = "idle";
+      renderSearchEmpty("输入关键词，停止 400ms 后才会发起请求");
+      updateSearchSave();
+      return;
+    }
+
+    searchStatus.classList.add("waiting");
+    searchStatusText.textContent = "等待 400ms";
+    void searchFill.offsetWidth;
+    searchFill.classList.add("run");
+
+    searchTimer = setTimeout(() => {
+      searchReqs++;
+      searchReqsEl.textContent = searchReqs;
+      updateSearchSave();
+
+      searchStatus.classList.remove("waiting");
+      searchFill.classList.remove("run");
+
+      const matches = GLOSSARY.filter((item) =>
+        (item.term + " " + item.zh).toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 6);
+
+      if (!matches.length) {
+        searchStatusText.textContent = "0 条结果";
+        renderSearchEmpty("没有匹配「" + query + "」的术语");
+        return;
+      }
+
+      searchStatusText.textContent = matches.length + " 条结果";
+      searchResults.innerHTML = matches.map((item, i) =>
+        '<li><span class="idx">' + String(i + 1).padStart(2, "0") + "</span>" +
+        '<span class="term">' + highlight(item.term, query) + "</span>" +
+        '<span class="zh">' + highlight(item.zh, query) + "</span></li>"
+      ).join("");
+    }, 400);
+  });
+
+  /* ============================================================
+     scroll demo · throttle 100ms
+  ============================================================ */
+
+  const REQUESTS = [
+    ["GET", "/api/session", "12ms"],
+    ["GET", "/api/cart", "38ms"],
+    ["POST", "/api/checkout", "164ms"],
+    ["GET", "/api/orders", "47ms"],
+    ["GET", "/api/profile", "23ms"],
+    ["PATCH", "/api/address", "61ms"],
+    ["GET", "/api/coupons", "29ms"],
+    ["POST", "/api/login", "95ms"],
+    ["GET", "/api/catalog", "73ms"],
+    ["GET", "/api/detail/42", "41ms"],
+    ["POST", "/api/review", "88ms"],
+    ["GET", "/api/history", "33ms"],
+    ["DELETE", "/api/draft/7", "54ms"],
+    ["GET", "/api/favorites", "26ms"],
+    ["GET", "/api/settings", "19ms"],
+    ["POST", "/api/upload", "212ms"],
+    ["GET", "/api/notifications", "31ms"],
+    ["GET", "/api/shipping", "58ms"],
+    ["PUT", "/api/preferences", "44ms"],
+    ["GET", "/api/health", "7ms"]
+  ];
+
+  const scrollView = $("#scrollView");
+  const scrollInner = $("#scrollInner");
+  const scrollFill = $("#scrollFill");
+  const scrollRawEl = $("#scrollRaw");
+  const scrollThrEl = $("#scrollThr");
+  const scrollPosEl = $("#scrollPos");
+
+  scrollInner.innerHTML = REQUESTS.map((row, i) =>
+    '<div class="logrow"><span class="n">' + String(i + 1).padStart(2, "0") + "</span>" +
+    '<span class="m">' + row[0] + "</span>" +
+    '<span class="p">' + row[1] + "</span>" +
+    '<span class="t">' + row[2] + "</span></div>"
+  ).join("");
+
+  let scrollRawCount = 0;
+  let scrollRunCount = 0;
+  let lastScrollRun = -1e9;
+
+  scrollView.addEventListener("scroll", () => {
+    scrollRawCount++;
+    scrollRawEl.textContent = scrollRawCount;
+
+    const now = performance.now();
+    if (now - lastScrollRun < 100) return;
+    lastScrollRun = now;
+
+    scrollRunCount++;
+    scrollThrEl.textContent = scrollRunCount;
+
+    const max = scrollView.scrollHeight - scrollView.clientHeight;
+    const pct = max > 0 ? scrollView.scrollTop / max : 0;
+    scrollFill.style.width = (pct * 100).toFixed(2) + "%";
+    scrollPosEl.textContent = Math.round(scrollView.scrollTop) + "px";
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

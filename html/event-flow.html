@@ -1,0 +1,1837 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>事件流 · Event Propagation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #08090b;
+    --panel: #0d0f12;
+    --panel-2: #101318;
+    --line: #22262e;
+    --line-soft: #1a1e25;
+    --ink: #e8e4da;
+    --ink-2: #b7b5ad;
+    --muted: #767d88;
+    --capture: #5bd3e3;
+    --target: #f2e2bb;
+    --bubble: #ffa06a;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --serif: "Songti SC", "Instrument Serif", Georgia, serif;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.02) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 560px at 16% -12%, rgba(91,211,227,.07), transparent 62%),
+      radial-gradient(900px 520px at 102% -4%, rgba(255,160,106,.06), transparent 58%);
+  }
+
+  /* ---------- header ---------- */
+
+  header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 24px 30px 18px;
+    flex: none;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 9.5px;
+    letter-spacing: .24em;
+    color: var(--muted);
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--bubble);
+    box-shadow: 0 0 12px var(--bubble);
+    animation: blink 2.6s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .25; }
+  }
+
+  h1 {
+    margin: 11px 0 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 46px;
+    line-height: .95;
+    letter-spacing: .06em;
+    color: var(--ink);
+  }
+
+  .head-right {
+    display: flex;
+    align-items: flex-end;
+    gap: 34px;
+  }
+
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 2px;
+  }
+
+  .mode-label {
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: var(--muted);
+  }
+
+  .mode-switch .mode-seg button {
+    padding: 6px 11px;
+    font-size: 9.5px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 26px;
+    padding-bottom: 3px;
+  }
+
+  .legend .item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--c);
+  }
+
+  .legend .sym {
+    width: 23px;
+    height: 23px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    opacity: .9;
+  }
+
+  .legend .txt {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1;
+  }
+
+  .legend b {
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--ink-2);
+    letter-spacing: .04em;
+  }
+
+  .legend i {
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: .16em;
+    color: #5f6671;
+  }
+
+  /* ---------- layout ---------- */
+
+  main {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-height: 0;
+    margin: 0 30px 24px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 396px 286px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: 0 40px 90px -50px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel + .panel { border-left: 1px solid var(--line); }
+
+  .panel-head {
+    flex: none;
+    height: 52px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.022), transparent);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .panel-title .no {
+    font-size: 9px;
+    color: #5b626d;
+    padding: 2px 5px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    letter-spacing: .04em;
+  }
+
+  .panel-title .zh {
+    font-size: 11px;
+    color: var(--ink-2);
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+
+  .panel-title .en {
+    font-size: 8px;
+    letter-spacing: .16em;
+    color: #555c66;
+    white-space: nowrap;
+  }
+
+  .step {
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .06em;
+  }
+
+  .live-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 8px;
+    letter-spacing: .16em;
+    color: #6d747f;
+  }
+
+  .live-tag i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--capture);
+    box-shadow: 0 0 8px var(--capture);
+  }
+
+  /* ---------- phase track ---------- */
+
+  .phase-track {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 15px 20px 16px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .phase .cap {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-bottom: 7px;
+    color: #5f6671;
+    transition: color .25s;
+  }
+
+  .phase .cap span:first-child {
+    font-size: 10px;
+    letter-spacing: .04em;
+  }
+
+  .phase .cap .en {
+    font-size: 7.5px;
+    letter-spacing: .12em;
+  }
+
+  .phase .bar {
+    height: 4px;
+    border-radius: 2px;
+    background: #191d23;
+    overflow: hidden;
+  }
+
+  .phase[data-phase="capture"] { --c: var(--capture); }
+  .phase[data-phase="target"]  { --c: var(--target); }
+  .phase[data-phase="bubble"]  { --c: var(--bubble); }
+
+  .phase .fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--c);
+    transition: width .26s cubic-bezier(.3,.8,.3,1);
+    box-shadow: 0 0 12px -2px var(--c);
+  }
+
+  .phase[data-active="true"] .cap { color: var(--c); }
+
+  .phase-track[data-aborted="capture"] .phase[data-phase="capture"] .bar {
+    background: repeating-linear-gradient(135deg, #173238 0 4px, #15181e 4px 8px);
+  }
+
+  .phase-track[data-aborted="bubble"] .phase[data-phase="bubble"] .bar {
+    background: repeating-linear-gradient(135deg, #2a1c14 0 4px, #15181e 4px 8px);
+  }
+
+  /* ---------- tree ---------- */
+
+  .tree-wrap {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 20px 20px;
+    overflow: auto;
+  }
+
+  .tree {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 720px;
+    height: 100%;
+    min-height: 380px;
+    margin: 0 auto;
+  }
+
+  .node {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 70px;
+    width: 100%;
+    padding: 34px 12px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255,255,255,.012);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    font-family: var(--mono);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color .28s, background .28s, box-shadow .32s;
+  }
+
+  .node:focus { outline: none; }
+
+  .lbl {
+    position: absolute;
+    top: 9px;
+    left: 13px;
+    right: 13px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10.5px;
+    letter-spacing: .03em;
+    color: #8d939d;
+    pointer-events: none;
+    transition: color .25s;
+  }
+
+  .lbl .tag { color: inherit; }
+
+  .badges {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .badge {
+    width: 15px;
+    height: 15px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #3a424d;
+    border-radius: 3px;
+    background: #0a0c0f;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 600;
+    color: #a5acb6;
+    transition: all .22s;
+  }
+
+  .badge[data-phase="capture"] {
+    color: var(--capture);
+    border-color: rgba(91,211,227,.38);
+  }
+
+  .badge[data-phase="bubble"] {
+    color: var(--bubble);
+    border-color: rgba(255,160,106,.38);
+  }
+
+  .badge[data-kind] {
+    opacity: .4;
+    color: #a5acb6;
+    border-color: #3a424d;
+  }
+
+  .badge[data-kind].on { opacity: 1; }
+
+  .badge.fired[data-kind="capture"] {
+    color: #04181b;
+    background: var(--capture);
+    border-color: var(--capture);
+    box-shadow: 0 0 14px -2px var(--capture);
+  }
+
+  .badge.fired[data-kind="bubble"] {
+    color: #1d0f06;
+    background: var(--bubble);
+    border-color: var(--bubble);
+    box-shadow: 0 0 14px -2px var(--bubble);
+  }
+
+  .badge.fired[data-phase="capture"] {
+    color: #04181b;
+    background: var(--capture);
+    border-color: var(--capture);
+    box-shadow: 0 0 14px -2px var(--capture);
+  }
+
+  .badge.fired[data-phase="bubble"] {
+    color: #1d0f06;
+    background: var(--bubble);
+    border-color: var(--bubble);
+    box-shadow: 0 0 14px -2px var(--bubble);
+  }
+
+  .node:has(.node:hover) { border-color: #2a3038; }
+
+  .node:hover {
+    border-color: #47505e;
+    background: rgba(255,255,255,.022);
+  }
+
+  .node.live {
+    --c: var(--target);
+    border-color: var(--c);
+    background: rgba(242,226,187,.035);
+    box-shadow: 0 0 0 1px var(--c), 0 0 36px -16px var(--c);
+  }
+
+  .node.live[data-phase="capture"] {
+    --c: var(--capture);
+    background: rgba(91,211,227,.045);
+  }
+
+  .node.live[data-phase="bubble"] {
+    --c: var(--bubble);
+    background: rgba(255,160,106,.045);
+  }
+
+  .node.live > .lbl { color: var(--ink); }
+
+  .node.live > .lbl::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    margin-right: 1px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 10px var(--c);
+  }
+
+  .target {
+    border-style: dashed;
+    border-color: #333b46;
+    background: rgba(255,255,255,.022);
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .target:hover { border-color: #566070; }
+
+  .target.live {
+    border-style: solid;
+    border-color: var(--c);
+    background: rgba(242,226,187,.05);
+  }
+
+  .target-face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 0 2px;
+    pointer-events: none;
+  }
+
+  .reticle {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #3c444f;
+    border-radius: 50%;
+    transition: border-color .3s, box-shadow .3s;
+  }
+
+  .reticle::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    border: 1px solid #4d5663;
+    border-radius: 50%;
+    transition: border-color .3s;
+  }
+
+  .reticle::after {
+    content: "";
+    position: absolute;
+    inset: -11px;
+    border: 1px dashed rgba(242,226,187,.1);
+    border-radius: 50%;
+  }
+
+  .target:hover .reticle {
+    border-color: #6a7382;
+    box-shadow: 0 0 26px -10px rgba(242,226,187,.5);
+  }
+
+  .target:hover .reticle::before { border-color: var(--target); }
+
+  .target.live .reticle {
+    border-color: var(--c);
+    box-shadow: 0 0 30px -8px var(--c);
+  }
+
+  .target.live .reticle::before { border-color: var(--c); }
+
+  .target-face .hint {
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: #6e7580;
+    transition: color .25s;
+  }
+
+  .target:hover .hint { color: var(--ink-2); }
+
+  /* ---------- inspector ---------- */
+
+  .inspector {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+
+  .inspector > div {
+    min-width: 0;
+    padding: 10px 15px 11px;
+    border-right: 1px solid var(--line-soft);
+  }
+
+  .inspector > div:last-child { border-right: 0; }
+
+  .inspector .k {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 0;
+    color: #5e6570;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .inspector .v {
+    display: block;
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- log ---------- */
+
+  .log-scroll {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #2b313a transparent;
+  }
+
+  .log { padding: 7px 0 12px; }
+
+  .log-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 62px minmax(0, 1fr) 26px;
+    gap: 6px;
+    align-items: center;
+    padding: 7px 16px 7px 20px;
+    animation: rowIn .3s cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .log-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    bottom: 7px;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: var(--c);
+    opacity: .5;
+  }
+
+  .log-row[data-phase="capture"] { --c: var(--capture); }
+  .log-row[data-phase="target"]  { --c: var(--target); }
+  .log-row[data-phase="bubble"]  { --c: var(--bubble); }
+
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .log-row .idx {
+    font-size: 9.5px;
+    color: #565d68;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .log-row .tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--c);
+    white-space: nowrap;
+  }
+
+  .log-row .tag::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--c);
+    flex: none;
+  }
+
+  .log-row .who {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .log-row .who i {
+    font-style: normal;
+    font-size: 10px;
+    color: var(--c);
+    opacity: .75;
+  }
+
+  .log-row .kind {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 16px;
+    justify-self: end;
+    border: 1px solid #2c323b;
+    border-radius: 3px;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 600;
+    color: #68707c;
+    background: #0a0c0f;
+  }
+
+  .log-row .kind.c {
+    color: var(--capture);
+    border-color: rgba(91,211,227,.35);
+  }
+
+  .log-row .kind.b {
+    color: var(--bubble);
+    border-color: rgba(255,160,106,.35);
+  }
+
+  .log-stop {
+    margin: 1px 18px 8px 46px;
+    padding: 7px 10px;
+    border-left: 2px solid var(--bubble);
+    border-radius: 0 6px 6px 0;
+    background: rgba(255,160,106,.07);
+    color: var(--bubble);
+    font-size: 9px;
+    letter-spacing: .03em;
+  }
+
+  .log-stop[data-phase="capture"] {
+    border-left-color: var(--capture);
+    background: rgba(91,211,227,.07);
+    color: var(--capture);
+  }
+
+  .empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 30px;
+    text-align: center;
+  }
+
+  .empty[hidden] { display: none; }
+
+  .empty .glyph {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: #4f5661;
+    letter-spacing: 0;
+  }
+
+  .empty .glyph span:nth-child(1) { color: rgba(91,211,227,.75); }
+  .empty .glyph span:nth-child(2) { color: rgba(242,226,187,.75); font-size: 9px; }
+  .empty .glyph span:nth-child(3) { color: rgba(255,160,106,.75); }
+
+  .empty p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 2;
+    color: #6b727d;
+  }
+
+  .log-foot {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 38px;
+    padding: 8px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+    font-size: 9px;
+    letter-spacing: .03em;
+    color: #666d78;
+  }
+
+  .log-foot .foot-ok { color: var(--ink-2); }
+
+  .log-foot .stop-msg {
+    color: var(--bubble);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .log-foot .foot-chip { white-space: nowrap; color: #5d6470; }
+
+  .log-foot.is-stopped { background: #17110d; }
+
+  .log-foot[data-stop-phase="capture"] { background: #0b1417; }
+  .log-foot[data-stop-phase="capture"] .stop-msg { color: var(--capture); }
+
+  #stopPhaseSeg button[data-phase="capture"][aria-pressed="true"] { color: var(--capture); }
+  #stopPhaseSeg button[data-phase="bubble"][aria-pressed="true"] { color: var(--bubble); }
+
+  /* ---------- controls ---------- */
+
+  .ctrl-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 18px 20px;
+    scrollbar-width: thin;
+    scrollbar-color: #2b313a transparent;
+  }
+
+  .group + .group { margin-top: 18px; }
+
+  .glabel {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .glabel .zh {
+    font-size: 10px;
+    letter-spacing: .04em;
+    color: var(--ink-2);
+  }
+
+  .glabel .en {
+    font-size: 7.5px;
+    letter-spacing: .14em;
+    color: #555c66;
+  }
+
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .matrix th {
+    padding: 0 0 6px;
+    font-size: 8px;
+    font-weight: 400;
+    letter-spacing: .08em;
+    text-align: left;
+    color: #5b626d;
+  }
+
+  .matrix th.cap {
+    color: rgba(91,211,227,.8);
+    text-align: right;
+    padding-right: 10px;
+  }
+
+  .matrix td {
+    padding: 4px 0;
+    border-top: 1px solid #171b21;
+    font-size: 10.5px;
+    color: var(--ink-2);
+  }
+
+  .matrix td.cell {
+    width: 92px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .matrix .bool {
+    display: inline-block;
+    width: 28px;
+    margin-left: 7px;
+    font-size: 8.5px;
+    text-align: left;
+    color: var(--capture);
+    vertical-align: middle;
+  }
+
+  .matrix .bool[data-value="false"] { color: var(--bubble); }
+
+  .matrix th.bub { color: rgba(255,160,106,.8); }
+
+  .matrix[data-mode="dual"] th.cap,
+  .matrix[data-mode="dual"] th.bub {
+    text-align: center;
+    padding-right: 0;
+  }
+
+  .matrix[data-mode="dual"] td.cell {
+    width: 40px;
+    text-align: center;
+  }
+
+  .tick {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+
+  .tick input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .tick span {
+    position: absolute;
+    inset: 0;
+    border: 1px solid #333a44;
+    border-radius: 4px;
+    background: #0a0c0f;
+    transition: border-color .18s;
+  }
+
+  .tick span::after {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border-radius: 2px;
+    background: var(--c, #c8cdd6);
+    opacity: 0;
+    transform: scale(.4);
+    transition: opacity .18s, transform .18s;
+  }
+
+  .tick.cap { --c: var(--capture); }
+  .tick.bub { --c: var(--bubble); }
+
+  .tick input:checked + span { border-color: #4b535f; }
+  .tick input:checked + span::after { opacity: 1; transform: scale(1); }
+  .tick input:focus-visible + span { outline: 2px solid var(--capture); outline-offset: 2px; }
+
+  select {
+    width: 100%;
+    appearance: none;
+    padding: 9px 28px 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background-color: #0a0c0f;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%237b828c' fill='none' stroke-width='1.2'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    color: var(--ink-2);
+    font: 10.5px var(--mono);
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: #4a5361; }
+
+  .hint {
+    margin: 8px 0 0;
+    font-size: 8.5px;
+    line-height: 1.8;
+    color: #5e6570;
+  }
+
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .seg.two {
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 8px;
+  }
+
+  .mode-seg {
+    display: flex;
+    align-self: center;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .mode-seg button {
+    padding: 4px 7px;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+    color: #717884;
+    font: 8.5px var(--mono);
+    cursor: pointer;
+    transition: background .18s, color .18s;
+  }
+
+  .mode-seg button:first-child { border-left: 0; }
+  .mode-seg button:hover { color: var(--ink-2); }
+  .mode-seg button[aria-pressed="true"] { background: #171c22; color: var(--ink); }
+
+  .seg button {
+    padding: 8px 0;
+    border: 0;
+    border-left: 1px solid var(--line);
+    background: transparent;
+    color: #717884;
+    font: 10px var(--mono);
+    cursor: pointer;
+    transition: background .18s, color .18s;
+  }
+
+  .seg button:first-child { border-left: 0; }
+  .seg button:hover { color: var(--ink-2); }
+  .seg button[aria-pressed="true"] { background: #171c22; color: var(--ink); }
+
+  .phases {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 8px;
+    letter-spacing: .03em;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .phases span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .phases b {
+    font-weight: 500;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phases .p1 { color: var(--capture); }
+  .phases .p2 { color: var(--target); }
+  .phases .p3 { color: var(--bubble); }
+
+  .btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #2a313b;
+    border-radius: 7px;
+    background: #151a20;
+    color: var(--ink);
+    font: 10.5px var(--mono);
+    letter-spacing: .05em;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, opacity .18s;
+  }
+
+  .btn:hover:not(:disabled) { background: #1b222a; border-color: #3a4350; }
+  .btn:disabled { opacity: .32; cursor: not-allowed; }
+
+  @media (max-width: 1240px) {
+    main { grid-template-columns: minmax(0, 1fr) 352px 264px; }
+    .panel-title .en { display: none; }
+  }
+
+  @media (max-width: 1060px) {
+    body { overflow: auto; }
+    main {
+      grid-template-columns: 1fr;
+      overflow: visible;
+    }
+    .panel { min-height: 0; }
+    .panel + .panel { border-left: 0; border-top: 1px solid var(--line); }
+    .tree-wrap { min-height: 560px; }
+    .log-scroll { height: 420px; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="eyebrow">DOM EVENT PROPAGATION / JAVASCRIPT</div>
+    <h1>事件流</h1>
+  </div>
+  <div class="head-right">
+    <div class="mode-switch">
+      <span class="mode-label">模式</span>
+      <div class="mode-seg" id="modeSeg">
+        <button type="button" data-mode="dual" aria-pressed="true" title="每个节点注册捕获和冒泡两个监听器">双监听器</button>
+        <button type="button" data-mode="capture" aria-pressed="false" title="每个节点注册一个监听器，由 capture 决定执行阶段">capture</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="item" style="--c: var(--capture)">
+        <span class="sym">↓</span>
+        <span class="txt"><b>捕获</b><i>CAPTURE</i></span>
+      </div>
+      <div class="item" style="--c: var(--target)">
+        <span class="sym">•</span>
+        <span class="txt"><b>目标</b><i>TARGET</i></span>
+      </div>
+      <div class="item" style="--c: var(--bubble)">
+        <span class="sym">↑</span>
+        <span class="txt"><b>冒泡</b><i>BUBBLE</i></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- 01 -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="no">01</span>
+        <span class="zh">传播路径</span>
+        <span class="en">PROPAGATION PATH</span>
+      </div>
+      <div class="step" id="stepCounter">00 / 00</div>
+    </div>
+
+    <div class="phase-track" id="phaseTrack" data-aborted="none">
+      <div class="phase" data-phase="capture" data-active="false">
+        <div class="cap"><span>捕获</span><span class="en">CAPTURE</span></div>
+        <div class="bar"><span class="fill"></span></div>
+      </div>
+      <div class="phase" data-phase="target" data-active="false">
+        <div class="cap"><span>目标</span><span class="en">TARGET</span></div>
+        <div class="bar"><span class="fill"></span></div>
+      </div>
+      <div class="phase" data-phase="bubble" data-active="false">
+        <div class="cap"><span>冒泡</span><span class="en">BUBBLE</span></div>
+        <div class="bar"><span class="fill"></span></div>
+      </div>
+    </div>
+
+    <div class="tree-wrap">
+      <div class="tree" id="tree">
+        <div class="node" data-node="document">
+          <span class="lbl">
+            <span class="tag">document</span>
+            <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+          </span>
+
+          <div class="node" data-node="html">
+            <span class="lbl">
+              <span class="tag">html</span>
+              <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+            </span>
+
+            <div class="node" data-node="body">
+              <span class="lbl">
+                <span class="tag">body</span>
+                <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+              </span>
+
+              <div class="node" data-node="#outer">
+                <span class="lbl">
+                  <span class="tag">#outer</span>
+                  <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+                </span>
+
+                <div class="node" data-node="#middle">
+                  <span class="lbl">
+                    <span class="tag">#middle</span>
+                    <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+                  </span>
+
+                  <button class="node target" data-node="#target" type="button">
+                    <span class="lbl">
+                      <span class="tag">#target</span>
+                      <span class="badges"><i class="badge" data-phase="capture">C</i></span>
+                    </span>
+                    <span class="target-face">
+                      <span class="reticle"></span>
+                      <span class="hint">点击派发事件</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector">
+      <div><span class="k">event.target</span><span class="v" id="iTarget">—</span></div>
+      <div><span class="k">event.currentTarget</span><span class="v" id="iCurrent">—</span></div>
+      <div><span class="k">event.eventPhase</span><span class="v" id="iPhase">—</span></div>
+      <div><span class="k">event.bubbles</span><span class="v" id="iBubbles">—</span></div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="no">02</span>
+        <span class="zh">监听器日志</span>
+        <span class="en">LISTENER LOG</span>
+      </div>
+      <span class="live-tag"><i></i>LIVE</span>
+    </div>
+
+    <div class="log-scroll" id="logScroll">
+      <div class="empty" id="logEmpty">
+        <div class="glyph"><span>↓</span><span>●</span><span>↑</span></div>
+        <p>点击左侧任意节点<br />事件先向下捕获，到达目标后再向上冒泡</p>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="log-foot" id="logFoot">
+      <span>等待点击</span><span class="foot-chip">0 listeners</span>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="no">03</span>
+        <span class="zh">控制台</span>
+        <span class="en">CONTROLS</span>
+      </div>
+    </div>
+
+    <div class="ctrl-body">
+      <div class="group">
+        <div class="glabel"><span class="zh">监听器</span><span class="en">LISTENERS</span></div>
+        <table class="matrix" id="matrixTable" data-mode="dual">
+          <thead id="matrixHead"></thead>
+          <tbody id="matrixBody"></tbody>
+        </table>
+        <p class="hint" id="matrixHint" hidden></p>
+      </div>
+
+      <div class="group">
+        <div class="glabel"><span class="zh">中断传播</span><span class="en">STOP</span></div>
+        <div class="seg two" id="stopPhaseSeg">
+          <button type="button" data-phase="capture" aria-pressed="false">捕获阶段</button>
+          <button type="button" data-phase="bubble" aria-pressed="true">冒泡阶段</button>
+        </div>
+        <select id="stopSelect">
+          <option value="">不中断（完整传播）</option>
+          <option value="#target">#target</option>
+          <option value="#middle">#middle</option>
+          <option value="#outer">#outer</option>
+          <option value="body">body</option>
+          <option value="html">html</option>
+          <option value="document">document</option>
+        </select>
+        <p class="hint" id="stopHint">在选中节点的冒泡监听器中调用 stopPropagation()，事件不再回到父节点。</p>
+      </div>
+
+      <div class="group">
+        <div class="glabel"><span class="zh">回放速度</span><span class="en">REPLAY</span></div>
+        <div class="seg" id="speedSeg">
+          <button type="button" data-speed="0.5" aria-pressed="false">0.5×</button>
+          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="2" aria-pressed="false">2×</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="glabel"><span class="zh">eventPhase</span><span class="en">VALUES</span></div>
+        <div class="phases">
+          <span><b class="p1">1</b>CAPTURE</span>
+          <span><b class="p2">2</b>TARGET</span>
+          <span><b class="p3">3</b>BUBBLE</span>
+        </div>
+      </div>
+
+      <button class="btn" id="replayBtn" type="button" disabled>重新回放</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const PHASES = ['capture', 'target', 'bubble'];
+  const NAMES = ['document', 'html', 'body', '#outer', '#middle', '#target'];
+
+  const pad = n => String(n).padStart(2, '0');
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  const nodes = Array.from(document.querySelectorAll('.node'));
+  const byName = new Map(nodes.map(el => [el.dataset.node, el]));
+
+  const DEFAULT_CAPTURE = new Set(['document', 'html', 'body']);
+
+  const configs = {
+    dual: Object.fromEntries(NAMES.map(name => [name, { capture: true, bubble: true }])),
+    capture: Object.fromEntries(NAMES.map(name => [name, { capture: DEFAULT_CAPTURE.has(name) }]))
+  };
+
+  let mode = 'dual';
+  let cfg = configs[mode];
+
+  const nodeListeners = new Map(NAMES.map(name => [name, []]));
+
+  let stopAt = '';
+  let stopPhase = 'bubble';
+  let speed = 1;
+  let lastRun = null;
+  let runToken = 0;
+  let activeRecord = null;
+
+  const el = {
+    log: document.getElementById('log'),
+    logScroll: document.getElementById('logScroll'),
+    logEmpty: document.getElementById('logEmpty'),
+    logFoot: document.getElementById('logFoot'),
+    step: document.getElementById('stepCounter'),
+    track: document.getElementById('phaseTrack'),
+    matrix: document.getElementById('matrixBody'),
+    matrixHead: document.getElementById('matrixHead'),
+    matrixTable: document.getElementById('matrixTable'),
+    matrixHint: document.getElementById('matrixHint'),
+    mode: document.getElementById('modeSeg'),
+    stop: document.getElementById('stopSelect'),
+    stopPhase: document.getElementById('stopPhaseSeg'),
+    stopHint: document.getElementById('stopHint'),
+    replay: document.getElementById('replayBtn'),
+    speed: document.getElementById('speedSeg'),
+    iTarget: document.getElementById('iTarget'),
+    iCurrent: document.getElementById('iCurrent'),
+    iPhase: document.getElementById('iPhase'),
+    iBubbles: document.getElementById('iBubbles')
+  };
+
+  /* ---------- controls ---------- */
+
+  function addNodeListener(name, handler, capture) {
+    byName.get(name).addEventListener('click', handler, capture);
+    nodeListeners.get(name).push({ handler, capture });
+  }
+
+  function clearNodeListeners() {
+    NAMES.forEach(name => {
+      const nodeEl = byName.get(name);
+      nodeListeners.get(name).forEach(({ handler, capture }) => {
+        nodeEl.removeEventListener('click', handler, capture);
+      });
+      nodeListeners.set(name, []);
+    });
+  }
+
+  function bindListeners() {
+    if (mode === 'dual') {
+      NAMES.forEach(name => {
+        addNodeListener(name, event => onEvent(event, name, true), true);
+        addNodeListener(name, event => onEvent(event, name, false), false);
+      });
+      return;
+    }
+
+    NAMES.forEach(name => {
+      const capture = cfg[name].capture;
+      addNodeListener(name, event => onEvent(event, name, capture), capture);
+    });
+  }
+
+  function setCapture(name, value) {
+    const nodeEl = byName.get(name);
+    nodeListeners.get(name).forEach(({ handler, capture }) => {
+      nodeEl.removeEventListener('click', handler, capture);
+    });
+    nodeListeners.set(name, []);
+
+    cfg[name].capture = Boolean(value);
+    const capture = cfg[name].capture;
+    addNodeListener(name, event => onEvent(event, name, capture), capture);
+  }
+
+  function renderMatrix() {
+    el.matrixTable.dataset.mode = mode;
+    el.matrixHead.innerHTML = mode === 'dual'
+      ? '<tr><th>节点</th><th class="cap">捕获</th><th class="bub">冒泡</th></tr>'
+      : '<tr><th>节点</th><th class="cap">capture</th></tr>';
+
+    el.matrix.innerHTML = NAMES.map(name => {
+      if (mode === 'dual') {
+        const { capture, bubble } = cfg[name];
+        return `
+        <tr>
+          <td class="name">${name}</td>
+          <td class="cell">
+            <label class="tick cap"><input type="checkbox" ${capture ? 'checked' : ''} data-node="${name}" data-kind="capture" /><span></span></label>
+          </td>
+          <td class="cell">
+            <label class="tick bub"><input type="checkbox" ${bubble ? 'checked' : ''} data-node="${name}" data-kind="bubble" /><span></span></label>
+          </td>
+        </tr>`;
+      }
+
+      const capture = cfg[name].capture;
+      return `
+      <tr>
+        <td class="name">${name}</td>
+        <td class="cell">
+          <label class="tick cap"><input type="checkbox" ${capture ? 'checked' : ''} data-node="${name}" /><span></span></label>
+          <span class="bool" data-value="${capture}">${capture}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    el.matrixHint.hidden = mode === 'dual';
+    el.matrixHint.textContent = mode === 'capture'
+      ? 'true：捕获阶段执行 · false：冒泡阶段执行'
+      : '';
+  }
+
+  function syncBoolLabels() {
+    el.matrix.querySelectorAll('.bool').forEach(label => {
+      const input = label.closest('td').querySelector('input[data-node]');
+      const value = cfg[input.dataset.node].capture;
+      label.textContent = String(value);
+      label.dataset.value = String(value);
+    });
+  }
+
+  function syncMatrix() {
+    el.matrix.querySelectorAll('input[data-node]').forEach(input => {
+      input.checked = cfg[input.dataset.node].capture;
+    });
+    syncBoolLabels();
+  }
+
+  function syncBadges() {
+    NAMES.forEach(name => {
+      const container = byName.get(name).querySelector('.badges');
+      if (mode === 'dual') {
+        const { capture, bubble } = cfg[name];
+        container.innerHTML = `
+          <i class="badge ${capture ? 'on' : ''}" data-kind="capture">C</i>
+          <i class="badge ${bubble ? 'on' : ''}" data-kind="bubble">B</i>`;
+      } else {
+        const capture = cfg[name].capture;
+        container.innerHTML = `<i class="badge" data-phase="${capture ? 'capture' : 'bubble'}">${capture ? 'C' : 'B'}</i>`;
+      }
+    });
+  }
+
+  function syncStopPhaseUI() {
+    el.stopPhase.querySelectorAll('button').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.phase === stopPhase));
+    });
+  }
+
+  function syncStopHint() {
+    if (mode === 'dual') {
+      el.stopHint.textContent = stopPhase === 'capture'
+        ? '在选中节点的捕获监听器中调用 stopPropagation()，事件不再向下。'
+        : '在选中节点的冒泡监听器中调用 stopPropagation()，事件不再向上。';
+    } else {
+      el.stopHint.textContent = stopPhase === 'capture'
+        ? 'capture=true：在捕获监听器中中断，事件不再向下。'
+        : 'capture=false：在冒泡监听器中中断，事件不再向上。';
+    }
+  }
+
+  function ensureStopListener() {
+    if (mode !== 'dual' || !stopAt || cfg[stopAt][stopPhase]) return;
+    cfg[stopAt][stopPhase] = true;
+    const box = el.matrix.querySelector(`input[data-node="${stopAt}"][data-kind="${stopPhase}"]`);
+    if (box) box.checked = true;
+    syncBadges();
+  }
+
+  el.matrix.addEventListener('change', event => {
+    const input = event.target.closest('input[data-node]');
+    if (!input) return;
+    const { node, kind } = input.dataset;
+
+    if (mode === 'dual') {
+      cfg[node][kind] = input.checked;
+      if (!input.checked && kind === stopPhase && stopAt === node) {
+        stopAt = '';
+        el.stop.value = '';
+      }
+      syncBadges();
+      return;
+    }
+
+    setCapture(node, input.checked);
+    syncBoolLabels();
+    syncBadges();
+
+    if (stopAt === node) {
+      stopPhase = cfg[node].capture ? 'capture' : 'bubble';
+      syncStopPhaseUI();
+      syncStopHint();
+    }
+  });
+
+  el.stop.addEventListener('change', () => {
+    stopAt = el.stop.value;
+    if (!stopAt) return;
+    if (mode === 'dual') {
+      ensureStopListener();
+    } else {
+      stopPhase = cfg[stopAt].capture ? 'capture' : 'bubble';
+      syncStopPhaseUI();
+      syncStopHint();
+    }
+  });
+
+  el.stopPhase.addEventListener('click', event => {
+    const button = event.target.closest('button[data-phase]');
+    if (!button) return;
+    stopPhase = button.dataset.phase;
+    syncStopPhaseUI();
+    syncStopHint();
+
+    if (mode === 'dual') {
+      ensureStopListener();
+    } else if (stopAt) {
+      setCapture(stopAt, stopPhase === 'capture');
+      syncMatrix();
+      syncBadges();
+    }
+  });
+
+  function setMode(next) {
+    if (next === mode) return;
+    ++runToken;
+    clearNodeListeners();
+    mode = next;
+    cfg = configs[mode];
+    stopAt = '';
+    el.stop.value = '';
+    stopPhase = 'bubble';
+    syncStopPhaseUI();
+    syncStopHint();
+    el.mode.querySelectorAll('button').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+    });
+    renderMatrix();
+    syncBadges();
+    bindListeners();
+    resetView();
+    el.logEmpty.hidden = false;
+    el.logEmpty.querySelector('p').innerHTML = mode === 'dual'
+      ? '点击左侧任意节点<br />事件先向下捕获，到达目标后再向上冒泡'
+      : '点击左侧任意节点<br />capture 决定监听器在捕获还是冒泡阶段执行';
+    el.logFoot.innerHTML = '<span>等待点击</span><span class="foot-chip">0 listeners</span>';
+    lastRun = null;
+    el.replay.disabled = true;
+  }
+
+  el.mode.addEventListener('click', event => {
+    const button = event.target.closest('button[data-mode]');
+    if (!button) return;
+    setMode(button.dataset.mode);
+  });
+
+  el.speed.addEventListener('click', event => {
+    const button = event.target.closest('button[data-speed]');
+    if (!button) return;
+    speed = Number(button.dataset.speed);
+    el.speed.querySelectorAll('button').forEach(b => {
+      b.setAttribute('aria-pressed', String(b === button));
+    });
+  });
+
+  el.replay.addEventListener('click', () => {
+    if (lastRun) run(lastRun);
+  });
+
+  /* ---------- real event capture ---------- */
+
+  bindListeners();
+
+  function beginRecord(event, clicked) {
+    if (!activeRecord || activeRecord.event !== event) {
+      activeRecord = {
+        event,
+        t0: performance.now(),
+        target: clicked.dataset.node,
+        entries: []
+      };
+      const snapshot = activeRecord;
+      setTimeout(() => finish(snapshot), 0);
+    }
+    return activeRecord;
+  }
+
+  function onEvent(event, name, isCapture) {
+    const clicked = event.target.closest ? event.target.closest('.node') : null;
+    if (!clicked) return;
+
+    const record = beginRecord(event, clicked);
+    if (mode === 'dual' && !cfg[name][isCapture ? 'capture' : 'bubble']) return;
+
+    const phase = event.eventPhase === 1
+      ? 'capture'
+      : event.eventPhase === 3 ? 'bubble' : 'target';
+
+    const entry = {
+      name,
+      phase,
+      isCapture,
+      phaseValue: event.eventPhase,
+      dt: performance.now() - record.t0
+    };
+    record.entries.push(entry);
+
+    if (stopAt === name && stopPhase === (isCapture ? 'capture' : 'bubble')) {
+      entry.stopped = true;
+      entry.stopPhase = stopPhase;
+      event.stopPropagation();
+    }
+  }
+
+  function finish(record) {
+    if (record !== activeRecord) return;
+
+    if (!record.entries.length) {
+      ++runToken;
+      resetView();
+      el.logEmpty.hidden = false;
+      el.logFoot.innerHTML = '<span>没有监听器被触发</span><span class="foot-chip">检查右侧开关</span>';
+      return;
+    }
+
+    record.expected = expectedCounts(record.target);
+    lastRun = record;
+    el.replay.disabled = false;
+    run(record);
+  }
+
+  /* ---------- replay ---------- */
+
+  async function run(record) {
+    const token = ++runToken;
+    resetView();
+    el.logEmpty.hidden = true;
+
+    const list = record.entries;
+    const total = list.length;
+    const expected = record.expected || expectedCounts(record.target);
+    const done = { capture: 0, target: 0, bubble: 0 };
+
+    const stoppedEntry = list.find(entry => entry.stopped);
+    const stopNote = stoppedEntry ? {
+      index: list.reduce((last, entry, i) => (entry.name === stoppedEntry.name ? i : last), -1),
+      phase: stoppedEntry.stopPhase,
+      text: stoppedEntry.stopPhase === 'capture'
+        ? 'stopPropagation() · 捕获在此终止，事件不再向下传播'
+        : 'stopPropagation() · 冒泡在此终止，事件不再向上传播'
+    } : null;
+
+    el.iTarget.textContent = record.target;
+
+    for (let i = 0; i < total; i++) {
+      const entry = list[i];
+      const prev = list[i - 1];
+      let delay = 240 / speed;
+      if (prev && prev.phase === 'target' && entry.phase === 'target') delay *= 0.4;
+
+      await wait(delay);
+      if (token !== runToken) return;
+
+      paint(entry, i, total, expected, done, record.target, stopNote);
+    }
+
+    await wait(420);
+    if (token !== runToken) return;
+
+    summarize(record);
+  }
+
+  function paint(entry, index, total, expected, done, target, stopNote) {
+    nodes.forEach(nodeEl => {
+      nodeEl.classList.remove('live');
+      delete nodeEl.dataset.phase;
+    });
+
+    const nodeEl = byName.get(entry.name);
+    nodeEl.classList.add('live');
+    nodeEl.dataset.phase = entry.phase;
+
+    const badge = mode === 'dual'
+      ? nodeEl.querySelector(`.badge[data-kind="${entry.isCapture ? 'capture' : 'bubble'}"]`)
+      : nodeEl.querySelector('.badge');
+    if (badge) badge.classList.add('fired');
+
+    appendRow(entry, index + 1);
+    done[entry.phase] += 1;
+
+    if (stopNote && index === stopNote.index) {
+      const note = document.createElement('div');
+      note.className = 'log-stop';
+      note.dataset.phase = stopNote.phase;
+      note.textContent = stopNote.text;
+      el.log.appendChild(note);
+      el.logScroll.scrollTo({ top: el.logScroll.scrollHeight, behavior: 'smooth' });
+    }
+
+    const phaseIndex = PHASES.indexOf(entry.phase);
+    PHASES.forEach((phase, i) => {
+      const seg = el.track.querySelector(`[data-phase="${phase}"]`);
+      const fill = seg.querySelector('.fill');
+      let percent = 0;
+
+      if (i < phaseIndex) {
+        percent = 100;
+      } else if (i === phaseIndex) {
+        const cap = expected[phase] || 0;
+        percent = cap ? Math.min(100, (done[phase] / cap) * 100) : 0;
+      }
+
+      fill.style.width = percent + '%';
+      seg.dataset.active = String(i === phaseIndex);
+    });
+
+    el.step.textContent = `${pad(index + 1)} / ${pad(total)}`;
+    setInspector(target, entry.name, `${entry.phaseValue} · ${entry.phase.toUpperCase()}`, 'true');
+  }
+
+  function appendRow(entry, index) {
+    const arrow = entry.phase === 'capture' ? '↓' : entry.phase === 'bubble' ? '↑' : '•';
+    const kindClass = entry.isCapture ? 'c' : 'b';
+    const kindLabel = entry.isCapture ? 'C' : 'B';
+
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.dataset.phase = entry.phase;
+    row.innerHTML = `
+      <span class="idx">${pad(index)}</span>
+      <span class="tag">${entry.phase}</span>
+      <span class="who"><i>${arrow}</i>${entry.name}</span>
+      <span class="kind ${kindClass}">${kindLabel}</span>`;
+    el.log.appendChild(row);
+
+    el.logScroll.scrollTo({ top: el.logScroll.scrollHeight, behavior: 'smooth' });
+  }
+
+  function summarize(record) {
+    const list = record.entries;
+    const real = list.length > 1 ? list[list.length - 1].dt - list[0].dt : 0;
+    const stopped = list.find(entry => entry.stopped);
+    const speedLabel = speed === 1 ? '1×' : speed + '×';
+
+    el.track.dataset.aborted = stopped ? stopped.stopPhase : 'none';
+    el.logFoot.dataset.stopPhase = stopped ? stopped.stopPhase : '';
+    el.logFoot.classList.toggle('is-stopped', Boolean(stopped));
+
+    if (stopped) {
+      el.logFoot.innerHTML = `
+        <span class="stop-msg">在 ${stopped.name} 的${stopped.stopPhase === 'capture' ? '捕获' : '冒泡'}阶段中断</span>
+        <span class="foot-chip">${list.length} 个监听器 · ${msLabel(real)}ms</span>`;
+    } else {
+      el.logFoot.innerHTML = `
+        <span class="foot-ok">${list.length} 个监听器 · 实测 ${msLabel(real)}ms</span>
+        <span class="foot-chip">慢放 ${speedLabel}</span>`;
+    }
+  }
+
+  function msLabel(ms) {
+    return ms < 0.05 ? '< 0.1' : ms.toFixed(2);
+  }
+
+  function expectedCounts(target) {
+    const result = { capture: 0, target: 0, bubble: 0 };
+    const targetIndex = NAMES.indexOf(target);
+    if (targetIndex < 0) return result;
+
+    if (mode === 'dual') {
+      for (let i = 0; i < targetIndex; i++) {
+        const name = NAMES[i];
+        if (cfg[name].capture) result.capture += 1;
+        if (cfg[name].bubble) result.bubble += 1;
+      }
+      if (cfg[target].capture) result.target += 1;
+      if (cfg[target].bubble) result.target += 1;
+      return result;
+    }
+
+    for (let i = 0; i < targetIndex; i++) {
+      if (cfg[NAMES[i]].capture) result.capture += 1;
+      else result.bubble += 1;
+    }
+    result.target = 1;
+    return result;
+  }
+
+  function resetView() {
+    nodes.forEach(nodeEl => {
+      nodeEl.classList.remove('live');
+      delete nodeEl.dataset.phase;
+    });
+    document.querySelectorAll('.badge.fired').forEach(badge => badge.classList.remove('fired'));
+
+    el.log.innerHTML = '';
+    el.logEmpty.hidden = false;
+    el.track.dataset.aborted = 'none';
+
+    PHASES.forEach(phase => {
+      const seg = el.track.querySelector(`[data-phase="${phase}"]`);
+      seg.dataset.active = 'false';
+      seg.querySelector('.fill').style.width = '0%';
+    });
+
+    el.step.textContent = '00 / 00';
+    el.logFoot.classList.remove('is-stopped');
+    delete el.logFoot.dataset.stopPhase;
+    el.logFoot.innerHTML = '<span>replaying</span><span class="foot-chip">—</span>';
+    setInspector('—', '—', '—', '—');
+  }
+
+  function setInspector(target, current, phase, bubbles) {
+    el.iTarget.textContent = target;
+    el.iCurrent.textContent = current;
+    el.iPhase.textContent = phase;
+    el.iBubbles.textContent = bubbles;
+  }
+
+  renderMatrix();
+  syncStopHint();
+  syncBadges();
+})();
+</script>
+</body>
+</html>

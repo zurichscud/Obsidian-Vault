@@ -1,0 +1,2479 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>常见事件 · Common Events</title>
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #08090b;
+    --panel: #0c0e12;
+    --panel-2: #101318;
+    --line: #22262e;
+    --line-soft: #181c22;
+    --ink: #eae6dc;
+    --ink-2: #b7b4ab;
+    --muted: #747b86;
+    --pointer: #f0b46a;
+    --keyboard: #5bd3e3;
+    --form: #9fe3a0;
+    --viewport: #b9a6ff;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --serif: "Instrument Serif", "Songti SC", Georgia, serif;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+
+  body {
+    min-width: 1180px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: auto;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size: 58px 58px;
+    -webkit-mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 0%, transparent 80%);
+    mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 0%, transparent 80%);
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(1000px 520px at 10% -12%, rgba(240,180,106,.06), transparent 62%),
+      radial-gradient(900px 480px at 38% -14%, rgba(91,211,227,.045), transparent 60%),
+      radial-gradient(860px 460px at 66% -12%, rgba(159,227,160,.035), transparent 58%),
+      radial-gradient(900px 500px at 96% -10%, rgba(185,166,255,.055), transparent 60%);
+  }
+
+  .shell {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1460px;
+    margin: 0 auto;
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  ::selection { background: rgba(240,180,106,.24); color: var(--ink); }
+
+  /* ---------- header ---------- */
+
+  header.shell {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 56px;
+    padding-top: 34px;
+    padding-bottom: 26px;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 9px;
+    letter-spacing: .24em;
+    color: #6e7580;
+    white-space: nowrap;
+  }
+
+  .eyebrow i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--pointer);
+    box-shadow: 0 0 12px var(--pointer);
+    animation: blink 3s ease-in-out infinite;
+  }
+
+  .eyebrow span { color: #444b55; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .22; }
+  }
+
+  h1 {
+    margin: 12px 0 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 50px;
+    line-height: 1;
+    letter-spacing: .015em;
+    color: var(--ink);
+  }
+
+  h1 .slash {
+    font-style: italic;
+    color: var(--pointer);
+    opacity: .85;
+    margin: 0 .16em;
+    font-size: 1.02em;
+  }
+
+  h1 .h1-alt {
+    font-style: italic;
+    font-size: .55em;
+    letter-spacing: .01em;
+    color: #9a978e;
+  }
+
+  .lede {
+    margin: 15px 0 0;
+    max-width: 690px;
+    font-size: 11px;
+    line-height: 1.95;
+    letter-spacing: .02em;
+    color: #858b95;
+  }
+
+  .lede b { font-weight: 400; color: #bdb9b0; }
+
+  .legend-wrap {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    padding-bottom: 3px;
+  }
+
+  .legend-cap {
+    font-size: 7.5px;
+    letter-spacing: .2em;
+    color: #464d57;
+    text-align: right;
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lg {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--c);
+  }
+
+  .lg i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 11px currentColor;
+    flex: none;
+  }
+
+  .lg b {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: .03em;
+    color: var(--ink-2);
+    min-width: 30px;
+  }
+
+  .lg span {
+    font-size: 8px;
+    letter-spacing: .16em;
+    color: #555c66;
+  }
+
+  /* ---------- panels ---------- */
+
+  .panel {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,.016), transparent 150px), var(--panel);
+    box-shadow: 0 36px 90px -60px #000, inset 0 1px 0 rgba(255,255,255,.025);
+    overflow: hidden;
+  }
+
+  .panel-head {
+    height: 53px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(255,255,255,.012);
+  }
+
+  .panel-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+  }
+
+  .panel-title .no {
+    font-size: 8.5px;
+    letter-spacing: .04em;
+    color: #5b626d;
+    padding: 3px 5px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .panel-title .zh {
+    font-size: 11px;
+    letter-spacing: .05em;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .panel-title .en {
+    font-size: 8px;
+    letter-spacing: .17em;
+    color: #515862;
+    white-space: nowrap;
+  }
+
+  .listener-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 8.5px;
+    letter-spacing: .04em;
+    color: #5d646f;
+    white-space: nowrap;
+  }
+
+  .listener-hint i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--keyboard);
+    box-shadow: 0 0 8px var(--keyboard);
+  }
+
+  /* ---------- lab ---------- */
+
+  .lab-body {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr) 372px;
+    align-items: stretch;
+    height: 640px;
+  }
+
+  /* ---------- menu ---------- */
+
+  .menu {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-right: 1px solid var(--line);
+    background: rgba(0,0,0,.16);
+  }
+
+  .menu-cap {
+    flex: none;
+    height: 31px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 8.5px;
+    letter-spacing: .12em;
+    color: #8a909b;
+  }
+
+  .menu-cap span:nth-child(2) {
+    font-size: 7.5px;
+    letter-spacing: .18em;
+    color: #5f6671;
+  }
+
+  .menu-total {
+    margin-left: auto;
+    color: #8a909b;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .menu-scroll {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 10px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #272d35 transparent;
+  }
+
+  .menu-scroll::-webkit-scrollbar { width: 5px; }
+  .menu-scroll::-webkit-scrollbar-thumb { background: #272d35; border-radius: 3px; }
+
+  .menu-item {
+    --c: var(--ink-2);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(255,255,255,.012);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .18s, border-color .18s;
+  }
+
+  .menu-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .menu-no {
+    font-size: 8px;
+    letter-spacing: .04em;
+    color: #5f6671;
+  }
+
+  .menu-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+
+  .menu-title {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: .02em;
+    color: #d7d3c9;
+    transition: color .18s;
+  }
+
+  .menu-en {
+    font-size: 7.5px;
+    letter-spacing: .16em;
+    color: #5f6671;
+  }
+
+  .menu-desc {
+    font-size: 9px;
+    line-height: 1.55;
+    color: #737a85;
+    letter-spacing: .01em;
+  }
+
+  .menu-item:hover {
+    background: rgba(255,255,255,.035);
+    border-color: #333a44;
+  }
+
+  .menu-item[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    border-color: transparent;
+  }
+
+  .menu-item[aria-pressed="true"] .menu-title { color: var(--c); }
+  .menu-item[aria-pressed="true"] .menu-desc { color: #b7b4ab; }
+
+  .menu-item:focus-visible {
+    outline: 1px solid rgba(234,230,220,.35);
+    outline-offset: 1px;
+  }
+
+  .menu-foot {
+    flex: none;
+    height: 30px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 7.5px;
+    letter-spacing: .06em;
+    color: #4f5661;
+  }
+
+  /* ---------- demo ---------- */
+
+  .demo {
+    --c: var(--pointer);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background: radial-gradient(620px 280px at 52% 0%, color-mix(in srgb, var(--c) 5%, transparent), transparent 70%);
+    transition: background .3s;
+  }
+
+  .demo-head {
+    flex: none;
+    padding: 15px 20px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(255,255,255,.012);
+  }
+
+  .demo-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .demo-cat {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 8px;
+    letter-spacing: .15em;
+    color: #6f7681;
+    text-transform: uppercase;
+  }
+
+  .demo-cat i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 9px var(--c);
+  }
+
+  .demo-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 7.5px;
+    letter-spacing: .14em;
+    color: var(--c);
+  }
+
+  .demo-live i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 8px currentColor;
+    animation: blink 2.8s ease-in-out infinite;
+  }
+
+  .demo-main {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .demo-main h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 34px;
+    line-height: 1.05;
+    letter-spacing: .02em;
+    color: var(--c);
+    white-space: nowrap;
+  }
+
+  .demo-main p {
+    flex: 1;
+    min-width: 220px;
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.75;
+    letter-spacing: .015em;
+    color: #8a909b;
+  }
+
+  .demo-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+  }
+
+  .mod {
+    --c: var(--ink-2);
+    display: none;
+    flex-direction: column;
+    gap: 13px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 18px 20px 16px;
+    border: 0;
+    background: transparent;
+    font-family: var(--mono);
+  }
+
+  .mod.is-active { display: flex; }
+
+  .mod-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .mod-note {
+    flex: none;
+    margin: 0;
+    font-size: 8.5px;
+    line-height: 1.78;
+    letter-spacing: .012em;
+    color: #6b727d;
+  }
+
+  .mod-note b {
+    font-weight: 400;
+    color: var(--c);
+  }
+
+  .mod-note code {
+    font-family: var(--mono);
+    color: #9aa1ab;
+    font-size: 8.5px;
+  }
+
+  /* ---------- pointer ---------- */
+
+  .pad {
+    position: relative;
+    flex: 1;
+    min-height: 158px;
+    border: 1px solid #2a3038;
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 50% 46%, rgba(240,180,106,.05), transparent 58%),
+      linear-gradient(rgba(255,255,255,.024) 1px, transparent 1px) 0 0 / 100% 27px,
+      linear-gradient(90deg, rgba(255,255,255,.024) 1px, transparent 1px) 0 0 / 27px 100%,
+      #0a0c0f;
+    overflow: hidden;
+    cursor: crosshair;
+    user-select: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .pad.is-pressed {
+    border-color: rgba(240,180,106,.6);
+    box-shadow: inset 0 0 44px rgba(240,180,106,.07);
+  }
+
+  .pad.is-context {
+    border-color: rgba(255,130,120,.5);
+    box-shadow: inset 0 0 44px rgba(255,130,120,.05);
+  }
+
+  .pad-axis {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(240,180,106,.16);
+    opacity: 0;
+    transition: opacity .16s;
+  }
+
+  .pad-axis.x {
+    left: 0;
+    right: 0;
+    top: var(--py, 50%);
+    height: 1px;
+  }
+
+  .pad-axis.y {
+    top: 0;
+    bottom: 0;
+    left: var(--px, 50%);
+    width: 1px;
+  }
+
+  .pad.has-pointer .pad-axis { opacity: 1; }
+
+  .reticle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -28px 0 0 -28px;
+    border: 1px solid rgba(240,180,106,.32);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .reticle::before,
+  .reticle::after {
+    content: "";
+    position: absolute;
+    background: rgba(240,180,106,.42);
+  }
+
+  .reticle::before { left: 50%; top: -5px; bottom: -5px; width: 1px; }
+  .reticle::after { top: 50%; left: -5px; right: -5px; height: 1px; }
+
+  .reticle i {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: var(--pointer);
+    box-shadow: 0 0 12px var(--pointer);
+  }
+
+  .pad-hint {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 38px);
+    transform: translateX(-50%);
+    font-size: 9px;
+    letter-spacing: .12em;
+    color: rgba(240,180,106,.62);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .pad-kicker {
+    position: absolute;
+    left: 13px;
+    top: 11px;
+    font-size: 7.5px;
+    letter-spacing: .18em;
+    color: #5a616c;
+    pointer-events: none;
+  }
+
+  .pad-pos {
+    position: absolute;
+    left: 13px;
+    bottom: 10px;
+    font-size: 8.5px;
+    letter-spacing: .03em;
+    color: #7b828d;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+
+  .pad-state {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    font-size: 7.5px;
+    letter-spacing: .14em;
+    color: #4d545e;
+    pointer-events: none;
+  }
+
+  .ripple {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border: 1px solid var(--pointer);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: ripple .58s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+
+  .ripple.is-danger { border-color: #ff8278; }
+
+  @keyframes ripple {
+    0% { transform: scale(.4); opacity: .9; }
+    100% { transform: scale(6.2); opacity: 0; }
+  }
+
+  .stats {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,.012);
+    overflow: hidden;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 7px 10px 8px;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .stat:first-child { border-left: 0; }
+
+  .stat span {
+    display: block;
+    font-size: 7.5px;
+    letter-spacing: .12em;
+    color: #6a717c;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stat b {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---------- keyboard ---------- */
+
+  .mod-keyboard { cursor: default; }
+
+  .mod-keyboard:focus {
+    outline: none;
+    background: rgba(91,211,227,.022);
+    box-shadow: inset 0 0 0 1px rgba(91,211,227,.3);
+  }
+
+  .mod-keyboard .mod-body {
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .keys {
+    flex: none;
+    display: grid;
+    grid-template-columns: clamp(170px, 32%, 230px) minmax(0, 1fr);
+    gap: 30px;
+    align-items: center;
+    min-height: 0;
+  }
+
+  .keycap {
+    position: relative;
+    width: 100%;
+    max-width: 230px;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    border: 1px solid #333b46;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #151a20, #0c0f13);
+    box-shadow: 0 6px 0 -1px #05070a, 0 14px 30px -16px #000, inset 0 1px 0 rgba(255,255,255,.06);
+    display: grid;
+    place-items: center;
+    transition: transform .08s, border-color .12s, box-shadow .12s;
+  }
+
+  .keycap::after {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(255,255,255,.03);
+    border-radius: 9px;
+  }
+
+  .keycap.is-down {
+    transform: translateY(3px);
+    border-color: rgba(91,211,227,.7);
+    box-shadow: 0 2px 0 -1px #05070a, 0 0 44px -5px rgba(91,211,227,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  #keyCapLabel {
+    position: relative;
+    z-index: 1;
+    max-width: 84%;
+    font-size: 42px;
+    line-height: 1;
+    color: var(--keyboard);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #keyCapLabel[data-len="one"] { font-size: 42px; }
+  #keyCapLabel[data-len="mid"] { font-size: 28px; }
+  #keyCapLabel[data-len="long"] { font-size: 18px; letter-spacing: -.02em; }
+
+  .keycap small {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    font-size: 7.5px;
+    letter-spacing: .2em;
+    color: #4f5661;
+    text-align: center;
+    z-index: 1;
+  }
+
+  .key-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 22px 24px;
+    min-width: 0;
+  }
+
+  .kf {
+    min-width: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .kf span {
+    display: block;
+    font-size: 8px;
+    letter-spacing: .13em;
+    color: #5d646f;
+    text-transform: uppercase;
+  }
+
+  .kf b {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--mono);
+  }
+
+  .kf b[data-on="true"] { color: var(--keyboard); }
+
+  .key-history {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+  }
+
+  .kh-label {
+    flex: none;
+    font-size: 8px;
+    letter-spacing: .15em;
+    color: #4f5661;
+  }
+
+  .kh-list {
+    display: flex;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .kh-chip {
+    max-width: 84px;
+    padding: 3px 8px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: #0b0e12;
+    font-size: 9.5px;
+    color: #9aa1ab;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    animation: chipIn .22s ease;
+  }
+
+  @keyframes chipIn {
+    0% { opacity: 0; transform: translateX(-3px); }
+    100% { opacity: 1; transform: none; }
+  }
+
+  .kh-empty {
+    font-size: 8.5px;
+    color: #4f5661;
+  }
+
+  .mod-note .when-focus { display: none; }
+  .mod-keyboard:focus .when-idle { display: none; }
+  .mod-keyboard:focus .when-focus { display: inline; }
+
+  /* ---------- form ---------- */
+
+  .mod-form .mod-body {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 600px;
+    margin: auto;
+    padding: 24px 26px 22px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.012);
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .field-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .field-top label,
+  .range-top label {
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: #7f8691;
+  }
+
+  .field-state {
+    padding: 2px 6px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 7.5px;
+    letter-spacing: .12em;
+    color: #5d646f;
+    text-transform: uppercase;
+    transition: color .18s, border-color .18s, background .18s;
+  }
+
+  .field-state[data-on="true"] {
+    color: var(--form);
+    border-color: rgba(159,227,160,.35);
+    background: rgba(159,227,160,.06);
+  }
+
+  #nameInput {
+    width: 100%;
+    margin-top: 7px;
+    padding: 10px 0 9px;
+    border: 0;
+    border-bottom: 1px solid #333a44;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    letter-spacing: .02em;
+    outline: none;
+    transition: border-color .18s;
+  }
+
+  #nameInput::placeholder { color: #4c535d; }
+  #nameInput:focus { border-color: var(--form); }
+
+  .range-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .range-top output {
+    font-size: 10px;
+    color: var(--form);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 24px;
+    margin: 5px 0 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--form) var(--fill, 40%), #2a3038 var(--fill, 40%));
+  }
+
+  input[type="range"]:focus { outline: none; }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
+    border: 1px solid var(--form);
+    border-radius: 50%;
+    background: #0b0e11;
+    box-shadow: 0 0 10px rgba(159,227,160,.3);
+  }
+
+  input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(159,227,160,.12), 0 0 14px rgba(159,227,160,.45);
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 2px;
+    border-radius: 2px;
+    background: #2a3038;
+  }
+
+  input[type="range"]::-moz-range-progress {
+    height: 2px;
+    border-radius: 2px;
+    background: var(--form);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 11px;
+    height: 11px;
+    border: 1px solid var(--form);
+    border-radius: 50%;
+    background: #0b0e11;
+  }
+
+  .form-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .submit {
+    padding: 8px 15px;
+    border: 1px solid rgba(159,227,160,.32);
+    border-radius: 5px;
+    background: rgba(159,227,160,.08);
+    color: var(--ink);
+    font: inherit;
+    font-size: 10px;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: background .18s, border-color .18s, transform .08s;
+  }
+
+  .submit:hover {
+    border-color: rgba(159,227,160,.55);
+    background: rgba(159,227,160,.15);
+  }
+
+  .submit:active { transform: translateY(1px); }
+
+  .reset {
+    padding: 8px 15px;
+    border: 1px solid #343b45;
+    border-radius: 5px;
+    background: transparent;
+    color: #9aa1ab;
+    font: inherit;
+    font-size: 10px;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: color .18s, border-color .18s, background .18s, transform .08s;
+  }
+
+  .reset:hover {
+    border-color: #4a525e;
+    background: rgba(255,255,255,.03);
+    color: var(--ink-2);
+  }
+
+  .reset:active { transform: translateY(1px); }
+
+  button:focus-visible {
+    outline: 1px solid rgba(234,230,220,.38);
+    outline-offset: 2px;
+  }
+
+  .form-msg {
+    font-size: 9px;
+    letter-spacing: .02em;
+    color: #626974;
+    text-align: right;
+  }
+
+  .form-msg.is-active { color: var(--form); }
+
+  .mod-form .stat b { font-size: 12px; }
+
+  /* ---------- viewport ---------- */
+
+  .scroll-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 260px;
+    min-width: 0;
+  }
+
+  .scroll-wrap::after {
+    content: "";
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
+    height: 36px;
+    z-index: 1;
+    border-radius: 0 0 9px 9px;
+    background: linear-gradient(to bottom, transparent, #0a0c0f 86%);
+    pointer-events: none;
+  }
+
+  .scrollbox {
+    position: absolute;
+    inset: 0;
+    border: 1px solid #2a3038;
+    border-radius: 10px;
+    background: #0a0c0f;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    outline: none;
+  }
+
+  .scrollbox::-webkit-scrollbar { display: none; }
+
+  .scrollbox:focus {
+    border-color: rgba(185,166,255,.42);
+    box-shadow: inset 0 0 0 1px rgba(185,166,255,.1);
+  }
+
+  .scroll-inner { padding: 14px 17px 42px; }
+
+  .sb-kicker {
+    margin: 0;
+    font-size: 8px;
+    letter-spacing: .18em;
+    color: #555c66;
+  }
+
+  .scroll-inner h4 {
+    margin: 7px 0 13px;
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: .02em;
+    color: var(--ink);
+  }
+
+  .sb-row {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    font-size: 9.5px;
+    line-height: 1.6;
+    color: #7b828d;
+  }
+
+  .sb-row em {
+    flex: none;
+    width: 18px;
+    font-style: normal;
+    color: var(--viewport);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-end {
+    margin: 14px 0 0;
+    font-size: 7.5px;
+    letter-spacing: .2em;
+    color: #4f5661;
+    text-align: center;
+  }
+
+  .rail {
+    position: absolute;
+    right: 5px;
+    top: 10px;
+    bottom: 10px;
+    z-index: 2;
+    width: 2px;
+    border-radius: 2px;
+    background: #1c2027;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .rail i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--viewport);
+    box-shadow: 0 0 8px var(--viewport);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform .06s linear;
+  }
+
+  .view-stats {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,.012);
+    overflow: hidden;
+  }
+
+  .vs {
+    min-width: 0;
+    padding: 8px 10px 9px;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .vs:first-child { border-left: 0; }
+
+  .vs span {
+    display: block;
+    font-size: 7.5px;
+    letter-spacing: .1em;
+    color: #6a717c;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vs b {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vs b[data-on="true"] { color: var(--viewport); }
+  .vs b[data-on="false"] { color: #8b7f7c; }
+
+  /* ---------- stream ---------- */
+
+  .stream {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-left: 1px solid var(--line);
+    background: rgba(255,255,255,.008);
+    overflow: hidden;
+  }
+
+  .stream-head {
+    flex: none;
+    height: 49px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .stream-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: .04em;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  .live-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--pointer);
+    box-shadow: 0 0 9px var(--pointer);
+    animation: blink 2.6s ease-in-out infinite;
+  }
+
+  .stream[data-paused="true"] .live-dot {
+    background: #5b626d;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .stream-en {
+    font-size: 8px;
+    letter-spacing: .16em;
+    color: #515862;
+  }
+
+  .stream-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mini {
+    padding: 4px 8px;
+    border: 1px solid #2e353f;
+    border-radius: 4px;
+    background: transparent;
+    color: #7b828d;
+    font: inherit;
+    font-size: 8.5px;
+    letter-spacing: .03em;
+    cursor: pointer;
+    transition: color .18s, border-color .18s, background .18s;
+  }
+
+  .mini:hover { color: var(--ink-2); border-color: #454d59; }
+
+  .mini[aria-pressed="true"] {
+    color: var(--pointer);
+    border-color: rgba(240,180,106,.4);
+    background: rgba(240,180,106,.06);
+  }
+
+  .filters {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .filter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 5px 2px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: #737a85;
+    font: inherit;
+    font-size: 8px;
+    letter-spacing: .01em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .18s, border-color .18s, background .18s;
+  }
+
+  .filter i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--c, #6e7580);
+    opacity: .7;
+    flex: none;
+  }
+
+  .filter span {
+    color: #5f6671;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .filter:hover { color: var(--ink-2); border-color: #2b323b; }
+
+  .filter[aria-pressed="true"] {
+    color: var(--ink);
+    border-color: #343b45;
+    background: rgba(255,255,255,.055);
+  }
+
+  .filter[aria-pressed="true"] i { opacity: 1; }
+  .filter[aria-pressed="true"] span { color: var(--ink-2); }
+
+  .log {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 8px 0;
+    list-style: none;
+    overflow-y: auto;
+    overflow-anchor: none;
+    scrollbar-width: thin;
+    scrollbar-color: #2a3038 transparent;
+  }
+
+  .log::-webkit-scrollbar { width: 5px; }
+  .log::-webkit-scrollbar-track { background: transparent; }
+  .log::-webkit-scrollbar-thumb { background: #272d35; border-radius: 3px; }
+
+  .entry {
+    --c: var(--ink-2);
+    display: grid;
+    grid-template-columns: 74px 84px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 13px;
+    border-bottom: 1px solid rgba(255,255,255,.025);
+  }
+
+  .entry:hover { background: rgba(255,255,255,.022); }
+
+  .entry time {
+    font-size: 8.5px;
+    letter-spacing: .01em;
+    color: #5f6670;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry .type {
+    font-size: 9px;
+    letter-spacing: .02em;
+    color: var(--c);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entry .detail {
+    font-size: 8.5px;
+    letter-spacing: .01em;
+    color: #7c838e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entry.is-new { animation: rowIn .32s cubic-bezier(.2,.8,.3,1); }
+
+  @keyframes rowIn {
+    0% { opacity: 0; transform: translateY(-4px); }
+    100% { opacity: 1; transform: none; }
+  }
+
+  .log-empty {
+    margin: 0;
+    padding: 28px 16px;
+    font-size: 9px;
+    line-height: 1.85;
+    letter-spacing: .02em;
+    color: #565d68;
+  }
+
+  .stream-foot {
+    flex: none;
+    margin-top: auto;
+    height: 31px;
+    padding: 0 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid var(--line-soft);
+    font-size: 7.5px;
+    letter-spacing: .07em;
+    color: #4f5661;
+  }
+
+  .stream-foot span:last-child { color: #5a616b; }
+
+  /* ---------- sheet ---------- */
+
+  .sheet { margin-top: 18px; }
+
+  .sheet-note {
+    font-size: 8px;
+    letter-spacing: .06em;
+    color: #5b626d;
+    white-space: nowrap;
+  }
+
+  .sheet-note b { font-weight: 400; color: #8a6a6a; }
+
+  .sheet-body {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .sheet-col {
+    --c: var(--ink-2);
+    min-width: 0;
+    padding: 15px 18px 17px;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .sheet-col:first-child { border-left: 0; }
+
+  .sheet-col-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .sheet-no {
+    font-size: 8px;
+    letter-spacing: .04em;
+    color: #4f5661;
+  }
+
+  .sheet-name {
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    color: var(--c);
+  }
+
+  .sheet-en {
+    font-size: 7.5px;
+    letter-spacing: .15em;
+    color: #4f5661;
+  }
+
+  .sheet-total {
+    margin-left: auto;
+    font-size: 8px;
+    color: #4f5661;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sheet-col ul {
+    margin: 0;
+    padding: 7px 0 0;
+    list-style: none;
+  }
+
+  .sheet-col li {
+    display: grid;
+    grid-template-columns: 134px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .sheet-col code {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--c);
+    white-space: nowrap;
+  }
+
+  .sheet-col li span {
+    font-size: 8.5px;
+    line-height: 1.55;
+    color: #767d88;
+  }
+
+  .sheet-col code .dep {
+    color: #8a6a6a;
+    font-size: 8px;
+    vertical-align: super;
+    margin-left: 1px;
+  }
+
+  /* ---------- footer ---------- */
+
+  footer.shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    padding-top: 26px;
+    padding-bottom: 34px;
+  }
+
+  footer p {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 18px;
+    letter-spacing: .03em;
+    color: #8f958f;
+  }
+
+  footer p span { color: var(--ink-2); }
+
+  footer .mark {
+    font-size: 8px;
+    letter-spacing: .2em;
+    color: #454c56;
+    white-space: nowrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="shell">
+  <div>
+    <div class="eyebrow"><i></i>DOM EVENT <span>·</span> FIELD GUIDE <span>·</span> 4 FAMILIES</div>
+    <h1>常见事件<span class="slash">/</span><span class="h1-alt">what fires when</span></h1>
+    <p class="lede">左侧选分类，中间动手试，右侧记录每一次触发。</p>
+  </div>
+  <div class="legend-wrap" aria-hidden="true">
+    <div class="legend-cap">FOUR FAMILIES / LIVE</div>
+    <div class="legend">
+      <div class="lg" style="--c: var(--pointer)"><i></i><b>指针</b><span>POINTER</span></div>
+      <div class="lg" style="--c: var(--form)"><i></i><b>表单</b><span>FORM</span></div>
+      <div class="lg" style="--c: var(--keyboard)"><i></i><b>键盘</b><span>KEYBOARD</span></div>
+      <div class="lg" style="--c: var(--viewport)"><i></i><b>视口</b><span>VIEWPORT</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="shell">
+  <section class="panel" aria-label="常见事件实验台">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="no">LAB</span>
+        <span class="zh">实验台</span>
+        <span class="en">EVENT EXPLORER</span>
+      </div>
+      <span class="listener-hint"><i></i>4 FAMILIES · addEventListener</span>
+    </div>
+
+    <div class="lab-body">
+      <nav class="menu" aria-label="事件分类菜单">
+        <div class="menu-cap">
+          <span>选择分类</span>
+          <span>SELECT</span>
+          <span class="menu-total">04</span>
+        </div>
+
+        <div class="menu-scroll">
+          <button class="menu-item" type="button" data-cat="pointer" style="--c: var(--pointer)" aria-pressed="true">
+            <span class="menu-top"><span class="menu-no">01</span></span>
+            <span class="menu-title-row"><span class="menu-title">指针</span><span class="menu-en">POINTER</span></span>
+            <span class="menu-desc">点击 · 双击 · 右键 · 悬停</span>
+          </button>
+
+          <button class="menu-item" type="button" data-cat="form" style="--c: var(--form)" aria-pressed="false">
+            <span class="menu-top"><span class="menu-no">02</span></span>
+            <span class="menu-title-row"><span class="menu-title">表单</span><span class="menu-en">FORM</span></span>
+            <span class="menu-desc">输入 · 变更 · 提交 · 焦点</span>
+          </button>
+
+          <button class="menu-item" type="button" data-cat="keyboard" style="--c: var(--keyboard)" aria-pressed="false">
+            <span class="menu-top"><span class="menu-no">03</span></span>
+            <span class="menu-title-row"><span class="menu-title">键盘</span><span class="menu-en">KEYBOARD</span></span>
+            <span class="menu-desc">按下 · 抬起 · 长按重复</span>
+          </button>
+
+          <button class="menu-item" type="button" data-cat="viewport" style="--c: var(--viewport)" aria-pressed="false">
+            <span class="menu-top"><span class="menu-no">04</span></span>
+            <span class="menu-title-row"><span class="menu-title">视口</span><span class="menu-en">VIEWPORT</span></span>
+            <span class="menu-desc">滚动 · 调整窗口 · 焦点</span>
+          </button>
+        </div>
+
+        <div class="menu-foot"><span>04 个分类</span><span>点击切换</span></div>
+      </nav>
+
+      <section class="demo" id="demo" style="--c: var(--pointer)" aria-label="事件演示">
+        <div class="demo-head">
+          <div class="demo-top">
+            <span class="demo-cat"><i></i><span id="demoNo">01</span> / <span id="demoCatEn">POINTER</span></span>
+            <span class="demo-live"><i></i>LIVE</span>
+          </div>
+          <div class="demo-main">
+            <h2 id="demoTitle">指针</h2>
+            <p id="demoDesc">点击、双击、右键，或把指针移入移出。坐标与计数实时更新。</p>
+          </div>
+        </div>
+
+        <div class="demo-body">
+
+          <article class="mod mod-pointer is-active" data-demo="pointer" style="--c: var(--pointer)">
+            <div class="mod-body">
+              <div class="pad" id="pad" aria-label="指针事件演示区，可单击、双击或右键">
+                <span class="pad-axis x"></span>
+                <span class="pad-axis y"></span>
+                <span class="reticle"><i></i></span>
+                <span class="pad-hint" id="padHint">点击这里</span>
+                <span class="pad-kicker">CLICK / DOUBLE / RIGHT</span>
+                <span class="pad-pos" id="padPos">x — · y —</span>
+                <span class="pad-state" id="padState">IDLE</span>
+              </div>
+
+              <div class="stats">
+                <div class="stat"><span>click</span><b id="statClick">0</b></div>
+                <div class="stat"><span>dblclick</span><b id="statDbl">0</b></div>
+                <div class="stat"><span>enter</span><b id="statEnter">0</b></div>
+                <div class="stat"><span>leave</span><b id="statLeave">0</b></div>
+              </div>
+            </div>
+
+            <p class="mod-note"><b>mousedown</b> → <b>mouseup</b> → <b>click</b>；双击在两次 click 之后补一个 dblclick。右键的 contextmenu 已阻止默认菜单。mousemove 只更新坐标，不进记录。</p>
+          </article>
+
+          <article class="mod mod-keyboard" data-demo="keyboard" id="keyboard" style="--c: var(--keyboard)" tabindex="0" aria-label="键盘事件演示，点击本面板后按键">
+            <div class="mod-body">
+              <div class="keys">
+                <div class="keycap" id="keyCap">
+                  <span id="keyCapLabel" data-len="one">?</span>
+                  <small>KEY</small>
+                </div>
+                <div class="key-fields">
+                  <div class="kf"><span>key</span><b id="keyName">—</b></div>
+                  <div class="kf"><span>code</span><b id="keyCode">—</b></div>
+                  <div class="kf"><span>repeat</span><b id="keyRepeat">false</b></div>
+                  <div class="kf"><span>mods</span><b id="keyMods">—</b></div>
+                </div>
+              </div>
+
+              <div class="key-history">
+                <span class="kh-label">RECENT</span>
+                <div class="kh-list" id="keyHistory"><span class="kh-empty">等待按键…</span></div>
+              </div>
+            </div>
+
+            <p class="mod-note key-note">
+              <span class="when-idle">点击本面板聚焦，然后按下任意键。Tab 仍然可用，不会被拦截。</span>
+              <span class="when-focus"><b>keydown</b> 按下 · <b>keyup</b> 抬起；按住不放会重复 keydown，repeat 变为 true。</span>
+            </p>
+          </article>
+
+          <form class="mod mod-form" id="demoForm" data-demo="form" style="--c: var(--form)" autocomplete="off">
+            <div class="mod-body">
+              <div class="field">
+                <div class="field-top">
+                  <label for="nameInput">称呼</label>
+                  <span class="field-state" id="fieldState">blur</span>
+                </div>
+                <input id="nameInput" name="name" type="text" placeholder="输入一个名字" spellcheck="false" />
+              </div>
+
+              <div class="range">
+                <div class="range-top">
+                  <label for="volume">音量</label>
+                  <output id="volumeOut" for="volume">40</output>
+                </div>
+                <input id="volume" name="volume" type="range" min="0" max="100" value="40" />
+              </div>
+
+              <div class="form-foot">
+                <div class="form-actions">
+                  <button class="submit" type="submit">提交</button>
+                  <button class="reset" type="reset">重置</button>
+                </div>
+                <span class="form-msg" id="formMsg">focus → input → change</span>
+              </div>
+
+              <div class="stats">
+                <div class="stat"><span>input</span><b id="statInput">0</b></div>
+                <div class="stat"><span>change</span><b id="statChange">0</b></div>
+                <div class="stat"><span>focus</span><b id="statFocus">0</b></div>
+                <div class="stat"><span>blur</span><b id="statBlur">0</b></div>
+              </div>
+            </div>
+
+            <p class="mod-note"><b>input</b> 每次值变化都触发；<b>change</b> 只在值提交时触发（失焦或回车）。<b>submit</b> 由下方按钮或回车触发，已被 preventDefault；<b>reset</b> 恢复默认值。</p>
+          </form>
+
+          <article class="mod mod-viewport" data-demo="viewport" style="--c: var(--viewport)">
+            <div class="mod-body">
+              <div class="scroll-wrap">
+                <div class="scrollbox" id="scrollBox" tabindex="0" aria-label="滚动事件演示，使用滚轮或方向键">
+                  <div class="scroll-inner">
+                    <p class="sb-kicker">SCROLL ME / 12 ROWS</p>
+                    <h4>滚动这块面板</h4>
+                    <div class="sb-row"><em>01</em><span>scroll 在滚动时连续触发，不冒泡。</span></div>
+                    <div class="sb-row"><em>02</em><span>resize 在窗口尺寸变化时触发。</span></div>
+                    <div class="sb-row"><em>03</em><span>focus 在切回本窗口时触发。</span></div>
+                    <div class="sb-row"><em>04</em><span>blur 在切到其他应用时触发。</span></div>
+                    <div class="sb-row"><em>05</em><span>load 等所有资源就绪后才触发。</span></div>
+                    <div class="sb-row"><em>06</em><span>DOMContentLoaded 只看 DOM，不看图片。</span></div>
+                    <div class="sb-row"><em>07</em><span>visibilitychange 跟随标签页的显隐。</span></div>
+                    <div class="sb-row"><em>08</em><span>wheel 在滚轮转动时触发，先于页面滚动。</span></div>
+                    <div class="sb-row"><em>09</em><span>beforeunload 在离开页面前触发，可以请求确认。</span></div>
+                    <div class="sb-row"><em>10</em><span>hashchange 在 URL 的 hash 变化时触发。</span></div>
+                    <div class="sb-row"><em>11</em><span>popstate 在历史记录前进或后退时触发。</span></div>
+                    <div class="sb-row"><em>12</em><span>online / offline 跟随网络状态变化。</span></div>
+                    <p class="sb-end">— END OF LIST —</p>
+                  </div>
+                </div>
+                <span class="rail" aria-hidden="true"><i id="scrollFill"></i></span>
+              </div>
+
+              <div class="view-stats">
+                <div class="vs"><span>scrollTop</span><b id="scrollTop">0</b></div>
+                <div class="vs"><span>resize</span><b id="resizeCount">0</b></div>
+                <div class="vs"><span>viewport</span><b id="viewportSize">— × —</b></div>
+                <div class="vs"><span>win focus</span><b id="windowFocus" data-on="true">true</b></div>
+              </div>
+            </div>
+
+            <p class="mod-note"><b>scroll</b> 不冒泡，只能监听滚动元素本身；<b>resize</b>、<b>focus</b>、<b>blur</b> 属于 window，切换窗口或拖动窗口边缘试试。</p>
+          </article>
+
+        </div>
+      </section>
+
+
+      <aside class="stream" id="stream" data-paused="false" aria-label="事件记录">
+        <div class="stream-head">
+          <div class="stream-title">
+            <span class="live-dot"></span>
+            事件记录
+            <span class="stream-en">EVENT LOG</span>
+          </div>
+          <div class="stream-actions">
+            <button class="mini" id="pauseBtn" type="button" aria-pressed="false" title="暂停事件记录">暂停</button>
+            <button class="mini" id="clearBtn" type="button" title="清空事件记录" aria-label="清空事件记录">清空</button>
+          </div>
+        </div>
+
+        <div class="filters" role="group" aria-label="按分类过滤事件">
+          <button class="filter" type="button" data-filter="all" aria-pressed="true"><i></i>全部 <span id="countAll">0</span></button>
+          <button class="filter" type="button" data-filter="pointer" aria-pressed="false" style="--c: var(--pointer)"><i></i>指针 <span id="countPointer">0</span></button>
+          <button class="filter" type="button" data-filter="form" aria-pressed="false" style="--c: var(--form)"><i></i>表单 <span id="countForm">0</span></button>
+          <button class="filter" type="button" data-filter="keyboard" aria-pressed="false" style="--c: var(--keyboard)"><i></i>键盘 <span id="countKeyboard">0</span></button>
+          <button class="filter" type="button" data-filter="viewport" aria-pressed="false" style="--c: var(--viewport)"><i></i>视口 <span id="countViewport">0</span></button>
+        </div>
+
+        <ol class="log" id="log" aria-label="事件记录，最新在上">
+          <li class="log-empty">还没有事件。在中间动手试试。</li>
+        </ol>
+
+        <div class="stream-foot">
+          <span>最新在上 · 最多 120 条</span>
+          <span id="streamHint">监听 · 直接绑定</span>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="panel sheet" aria-label="常见事件速查">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="no">REF</span>
+        <span class="zh">事件速查</span>
+        <span class="en">COMMON EVENTS</span>
+      </div>
+      <span class="sheet-note"><b>†</b> 已弃用 · 其余为现行标准</span>
+    </div>
+
+    <div class="sheet-body">
+      <div class="sheet-col" style="--c: var(--pointer)">
+        <div class="sheet-col-head">
+          <span class="sheet-no">01</span>
+          <span class="sheet-name">指针</span>
+          <span class="sheet-en">POINTER</span>
+          <span class="sheet-total">10</span>
+        </div>
+        <ul>
+          <li><code>click</code><span>按下并在同一元素上抬起</span></li>
+          <li><code>dblclick</code><span>快速两次 click 之后</span></li>
+          <li><code>mousedown / mouseup</code><span>按下 / 抬起</span></li>
+          <li><code>mousemove</code><span>指针移动，高频触发</span></li>
+          <li><code>mouseenter / mouseleave</code><span>进入 / 离开，不冒泡</span></li>
+          <li><code>mouseover / mouseout</code><span>进入 / 离开，会冒泡</span></li>
+          <li><code>contextmenu</code><span>右键菜单弹出之前</span></li>
+          <li><code>wheel</code><span>滚轮滚动</span></li>
+          <li><code>pointerdown / pointerup</code><span>指针事件，统一鼠标与触摸</span></li>
+          <li><code>pointermove</code><span>指针移动的现代写法</span></li>
+        </ul>
+      </div>
+
+      <div class="sheet-col" style="--c: var(--form)">
+        <div class="sheet-col-head">
+          <span class="sheet-no">02</span>
+          <span class="sheet-name">表单</span>
+          <span class="sheet-en">FORM</span>
+          <span class="sheet-total">08</span>
+        </div>
+        <ul>
+          <li><code>focus / blur</code><span>焦点进入 / 离开，不冒泡</span></li>
+          <li><code>focusin / focusout</code><span>同上，会冒泡</span></li>
+          <li><code>input</code><span>值每次变化，立即触发</span></li>
+          <li><code>change</code><span>值提交：失焦或回车</span></li>
+          <li><code>submit</code><span>表单提交</span></li>
+          <li><code>reset</code><span>表单重置</span></li>
+          <li><code>select</code><span>文本被选中</span></li>
+          <li><code>invalid</code><span>表单校验失败</span></li>
+        </ul>
+      </div>
+
+      <div class="sheet-col" style="--c: var(--keyboard)">
+        <div class="sheet-col-head">
+          <span class="sheet-no">03</span>
+          <span class="sheet-name">键盘</span>
+          <span class="sheet-en">KEYBOARD</span>
+          <span class="sheet-total">06</span>
+        </div>
+        <ul>
+          <li><code>keydown</code><span>按下，长按会重复</span></li>
+          <li><code>keyup</code><span>抬起，只触发一次</span></li>
+          <li><code>keypress<span class="dep">†</span></code><span>字符输入，已弃用</span></li>
+          <li><code>compositionstart / end</code><span>输入法组合开始 / 结束</span></li>
+          <li><code>compositionupdate</code><span>输入法组合正在更新</span></li>
+          <li><code>beforeinput</code><span>输入发生之前，可取消</span></li>
+        </ul>
+      </div>
+
+      <div class="sheet-col" style="--c: var(--viewport)">
+        <div class="sheet-col-head">
+          <span class="sheet-no">04</span>
+          <span class="sheet-name">页面</span>
+          <span class="sheet-en">PAGE / WINDOW</span>
+          <span class="sheet-total">09</span>
+        </div>
+        <ul>
+          <li><code>scroll</code><span>滚动，不冒泡</span></li>
+          <li><code>resize</code><span>视口尺寸变化</span></li>
+          <li><code>load</code><span>所有资源加载完成</span></li>
+          <li><code>DOMContentLoaded</code><span>DOM 解析完成</span></li>
+          <li><code>visibilitychange</code><span>标签页显示 / 隐藏</span></li>
+          <li><code>beforeunload</code><span>离开页面之前</span></li>
+          <li><code>hashchange</code><span>URL 的 hash 变化</span></li>
+          <li><code>popstate</code><span>历史记录前进 / 后退</span></li>
+          <li><code>online / offline</code><span>网络恢复 / 断开</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="shell">
+  <p>事件是通知，<span>不是命令。</span></p>
+  <span class="mark">DOM · COMMON EVENTS</span>
+</footer>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const pad2 = (value) => String(value).padStart(2, '0');
+
+  const cats = {
+    pointer: {
+      no: '01',
+      zh: '指针',
+      en: 'POINTER',
+      color: 'var(--pointer)',
+      desc: '点击、双击、右键，或把指针移入移出。坐标与计数实时更新。'
+    },
+    form: {
+      no: '02',
+      zh: '表单',
+      en: 'FORM',
+      color: 'var(--form)',
+      desc: '输入文字、调整音量或提交表单。焦点、值与提交事件都会记录。'
+    },
+    keyboard: {
+      no: '03',
+      zh: '键盘',
+      en: 'KEYBOARD',
+      color: 'var(--keyboard)',
+      desc: '点击演示区后按键。keydown 与 keyup 会显示按键、代码和修饰键。'
+    },
+    viewport: {
+      no: '04',
+      zh: '视口',
+      en: 'VIEWPORT',
+      color: 'var(--viewport)',
+      desc: '滚动面板，或拖动窗口边缘。scroll、resize 与窗口焦点都会记录。'
+    }
+  };
+
+  const timeStamp = () => {
+    const date = new Date();
+    return `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}.${String(date.getMilliseconds()).padStart(3, '0')}`;
+  };
+
+  const shorten = (value, max = 16) => {
+    const text = String(value).replace(/\s+/g, ' ');
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+  };
+
+  /* ---------- event stream ---------- */
+
+  const stream = $('#stream');
+  const logEl = $('#log');
+  const pauseBtn = $('#pauseBtn');
+  const clearBtn = $('#clearBtn');
+  const filterButtons = Array.from(document.querySelectorAll('.filter'));
+  const countEls = {
+    all: $('#countAll'),
+    pointer: $('#countPointer'),
+    keyboard: $('#countKeyboard'),
+    form: $('#countForm'),
+    viewport: $('#countViewport')
+  };
+
+  const entries = [];
+  const totals = { all: 0, pointer: 0, keyboard: 0, form: 0, viewport: 0 };
+  const LIMIT = 120;
+  let filter = 'all';
+  let paused = false;
+
+  function refreshCounts() {
+    Object.keys(countEls).forEach((key) => {
+      countEls[key].textContent = totals[key];
+    });
+  }
+
+  function entryNode(entry, isNew = false) {
+    const item = document.createElement('li');
+    item.className = 'entry' + (isNew ? ' is-new' : '');
+    item.style.setProperty('--c', cats[entry.cat].color);
+
+    const time = document.createElement('time');
+    time.textContent = entry.time;
+
+    const type = document.createElement('span');
+    type.className = 'type';
+    type.textContent = entry.type;
+
+    const detail = document.createElement('span');
+    detail.className = 'detail';
+    detail.textContent = entry.detail;
+
+    item.append(time, type, detail);
+    if (isNew) {
+      item.addEventListener('animationend', () => item.classList.remove('is-new'), { once: true });
+    }
+    return item;
+  }
+
+  function renderLog() {
+    const visible = entries.filter((entry) => filter === 'all' || entry.cat === filter);
+    if (!visible.length) {
+      const empty = document.createElement('li');
+      empty.className = 'log-empty';
+      empty.textContent = entries.length
+        ? '这个分类还没有记录。'
+        : '还没有事件。在中间动手试试。';
+      logEl.replaceChildren(empty);
+      return;
+    }
+    logEl.replaceChildren(...visible.map((entry) => entryNode(entry)));
+  }
+
+  function record(cat, type, detail = '') {
+    if (paused) return;
+
+    const entry = { cat, type, detail, time: timeStamp() };
+    entries.unshift(entry);
+    if (entries.length > LIMIT) entries.pop();
+
+    totals[cat] += 1;
+    totals.all += 1;
+    refreshCounts();
+
+    if (filter !== 'all' && filter !== cat) return;
+
+    const empty = logEl.querySelector('.log-empty');
+    if (empty) empty.remove();
+    logEl.prepend(entryNode(entry, true));
+    logEl.scrollTop = 0;
+    while (logEl.children.length > LIMIT) {
+      logEl.lastElementChild.remove();
+    }
+  }
+
+  pauseBtn.addEventListener('click', () => {
+    paused = !paused;
+    stream.dataset.paused = String(paused);
+    pauseBtn.setAttribute('aria-pressed', String(paused));
+    pauseBtn.textContent = paused ? '继续' : '暂停';
+    $('#streamHint').textContent = paused ? '记录已暂停' : '监听 · 直接绑定';
+  });
+
+  clearBtn.addEventListener('click', () => {
+    entries.length = 0;
+    totals.all = 0;
+    totals.pointer = 0;
+    totals.keyboard = 0;
+    totals.form = 0;
+    totals.viewport = 0;
+    refreshCounts();
+    renderLog();
+  });
+
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      filter = button.dataset.filter;
+      filterButtons.forEach((item) => {
+        item.setAttribute('aria-pressed', String(item === button));
+      });
+      renderLog();
+    });
+  });
+
+  /* ---------- event menu ---------- */
+
+  const menuButtons = Array.from(document.querySelectorAll('.menu-item'));
+  const demo = $('#demo');
+  const demoNo = $('#demoNo');
+  const demoCatEn = $('#demoCatEn');
+  const demoTitle = $('#demoTitle');
+  const demoDesc = $('#demoDesc');
+  const modules = Array.from(document.querySelectorAll('.mod[data-demo]'));
+
+  function selectCategory(key) {
+    const cat = cats[key];
+    if (!cat) return;
+
+    demo.style.setProperty('--c', cat.color);
+    demoNo.textContent = cat.no;
+    demoCatEn.textContent = cat.en;
+    demoTitle.textContent = cat.zh;
+    demoDesc.textContent = cat.desc;
+
+    menuButtons.forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.cat === key));
+    });
+
+    modules.forEach((module) => {
+      module.classList.toggle('is-active', module.dataset.demo === key);
+    });
+  }
+
+  menuButtons.forEach((button) => {
+    button.addEventListener('click', () => selectCategory(button.dataset.cat));
+  });
+
+  selectCategory('pointer');
+
+  /* ---------- pointer ---------- */
+
+  const pad = $('#pad');
+  const padPos = $('#padPos');
+  const padState = $('#padState');
+  const statClick = $('#statClick');
+  const statDbl = $('#statDbl');
+  const statEnter = $('#statEnter');
+  const statLeave = $('#statLeave');
+  let clicks = 0;
+  let doubles = 0;
+  let enters = 0;
+  let leaves = 0;
+
+  const padPoint = (event) => {
+    const rect = pad.getBoundingClientRect();
+    return {
+      x: Math.round(event.clientX - rect.left),
+      y: Math.round(event.clientY - rect.top)
+    };
+  };
+
+  function ripple(x, y, danger = false) {
+    const dot = document.createElement('span');
+    dot.className = 'ripple' + (danger ? ' is-danger' : '');
+    dot.style.left = `${x}px`;
+    dot.style.top = `${y}px`;
+    pad.appendChild(dot);
+    dot.addEventListener('animationend', () => dot.remove(), { once: true });
+  }
+
+  pad.addEventListener('mousemove', (event) => {
+    const point = padPoint(event);
+    pad.classList.add('has-pointer');
+    pad.style.setProperty('--px', `${point.x}px`);
+    pad.style.setProperty('--py', `${point.y}px`);
+    padPos.textContent = `x ${point.x} · y ${point.y}`;
+  });
+
+  pad.addEventListener('mouseenter', () => {
+    enters += 1;
+    statEnter.textContent = enters;
+    padState.textContent = 'ENTER';
+    record('pointer', 'mouseenter', 'pad');
+  });
+
+  pad.addEventListener('mouseleave', () => {
+    leaves += 1;
+    statLeave.textContent = leaves;
+    pad.classList.remove('has-pointer', 'is-pressed');
+    padPos.textContent = 'x — · y —';
+    padState.textContent = 'LEAVE';
+    record('pointer', 'mouseleave', 'pad');
+  });
+
+  pad.addEventListener('mousedown', (event) => {
+    const point = padPoint(event);
+    pad.classList.add('is-pressed');
+    padState.textContent = 'DOWN';
+    ripple(point.x, point.y);
+    record('pointer', 'mousedown', `button ${event.button} · x ${point.x} y ${point.y}`);
+  });
+
+  pad.addEventListener('mouseup', (event) => {
+    pad.classList.remove('is-pressed');
+    padState.textContent = 'UP';
+    record('pointer', 'mouseup', `button ${event.button}`);
+  });
+
+  pad.addEventListener('click', (event) => {
+    const point = padPoint(event);
+    clicks += 1;
+    statClick.textContent = clicks;
+    padState.textContent = 'CLICK';
+    record('pointer', 'click', `x ${point.x} · y ${point.y}`);
+  });
+
+  pad.addEventListener('dblclick', () => {
+    doubles += 1;
+    statDbl.textContent = doubles;
+    padState.textContent = 'DBLCLICK';
+    record('pointer', 'dblclick', '两次 click 之后');
+  });
+
+  pad.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    const point = padPoint(event);
+    pad.classList.add('is-context');
+    window.setTimeout(() => pad.classList.remove('is-context'), 450);
+    ripple(point.x, point.y, true);
+    padState.textContent = 'CONTEXT';
+    record('pointer', 'contextmenu', 'preventDefault · 菜单被阻止');
+  });
+
+  /* ---------- keyboard ---------- */
+
+  const keyboard = $('#keyboard');
+  const keyCap = $('#keyCap');
+  const keyCapLabel = $('#keyCapLabel');
+  const keyName = $('#keyName');
+  const keyCode = $('#keyCode');
+  const keyRepeat = $('#keyRepeat');
+  const keyMods = $('#keyMods');
+  const keyHistory = $('#keyHistory');
+  const recentKeys = [];
+
+  const keyLabel = (key) => (key === ' ' ? 'Space' : key);
+
+  const modsOf = (event) => {
+    const mods = [];
+    if (event.ctrlKey) mods.push('Ctrl');
+    if (event.altKey) mods.push('Alt');
+    if (event.shiftKey) mods.push('Shift');
+    if (event.metaKey) mods.push('Meta');
+    return mods.length ? mods.join(' + ') : '—';
+  };
+
+  const fitCap = (label) => {
+    keyCapLabel.textContent = label;
+    keyCapLabel.dataset.len = label.length > 4 ? 'long' : label.length > 1 ? 'mid' : 'one';
+  };
+
+  function pushRecent(label, repeat) {
+    if (repeat) return;
+    recentKeys.unshift(label);
+    if (recentKeys.length > 6) recentKeys.pop();
+    keyHistory.replaceChildren(...recentKeys.map((key) => {
+      const chip = document.createElement('span');
+      chip.className = 'kh-chip';
+      chip.textContent = key;
+      return chip;
+    }));
+  }
+
+  keyboard.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') return;
+    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+    }
+
+    const label = keyLabel(event.key);
+    fitCap(label);
+    keyCap.classList.add('is-down');
+    keyName.textContent = label;
+    keyCode.textContent = event.code || '—';
+    keyRepeat.textContent = event.repeat ? 'true' : 'false';
+    keyRepeat.dataset.on = String(event.repeat);
+    keyMods.textContent = modsOf(event);
+    pushRecent(label, event.repeat);
+    record('keyboard', 'keydown', `${label} · ${event.code}${event.repeat ? ' · repeat' : ''}`);
+  });
+
+  keyboard.addEventListener('keyup', (event) => {
+    const label = keyLabel(event.key);
+    keyCap.classList.remove('is-down');
+    keyRepeat.textContent = 'false';
+    keyRepeat.dataset.on = 'false';
+    keyMods.textContent = modsOf(event);
+    record('keyboard', 'keyup', `${label} · ${event.code}`);
+  });
+
+  keyboard.addEventListener('blur', () => {
+    keyCap.classList.remove('is-down');
+    keyRepeat.textContent = 'false';
+    keyRepeat.dataset.on = 'false';
+  });
+
+  /* ---------- form ---------- */
+
+  const form = $('#demoForm');
+  const nameInput = $('#nameInput');
+  const fieldState = $('#fieldState');
+  const formMsg = $('#formMsg');
+  const volume = $('#volume');
+  const volumeOut = $('#volumeOut');
+  const statInput = $('#statInput');
+  const statChange = $('#statChange');
+  const statFocus = $('#statFocus');
+  const statBlur = $('#statBlur');
+  let inputs = 0;
+  let changes = 0;
+  let focuses = 0;
+  let blurs = 0;
+
+  const valueLabel = (value) => (value ? `“${shorten(value)}”` : '(空)');
+
+  nameInput.addEventListener('focus', () => {
+    focuses += 1;
+    statFocus.textContent = focuses;
+    fieldState.textContent = 'focus';
+    fieldState.dataset.on = 'true';
+    record('form', 'focus', 'input');
+  });
+
+  nameInput.addEventListener('blur', () => {
+    blurs += 1;
+    statBlur.textContent = blurs;
+    fieldState.textContent = 'blur';
+    fieldState.dataset.on = 'false';
+    record('form', 'blur', 'input');
+  });
+
+  nameInput.addEventListener('input', () => {
+    inputs += 1;
+    statInput.textContent = inputs;
+    record('form', 'input', `value ${valueLabel(nameInput.value)}`);
+  });
+
+  nameInput.addEventListener('change', () => {
+    changes += 1;
+    statChange.textContent = changes;
+    record('form', 'change', `value ${valueLabel(nameInput.value)}`);
+  });
+
+  nameInput.addEventListener('compositionstart', () => {
+    record('form', 'compositionstart', '输入法组合开始');
+  });
+
+  nameInput.addEventListener('compositionend', () => {
+    record('form', 'compositionend', `value ${valueLabel(nameInput.value)}`);
+  });
+
+  nameInput.addEventListener('select', () => {
+    record('form', 'select', `value ${valueLabel(nameInput.value)}`);
+  });
+
+  volume.style.setProperty('--fill', `${volume.value}%`);
+
+  volume.addEventListener('input', () => {
+    inputs += 1;
+    statInput.textContent = inputs;
+    volumeOut.value = volume.value;
+    volume.style.setProperty('--fill', `${volume.value}%`);
+    record('form', 'input', `volume ${volume.value}`);
+  });
+
+  volume.addEventListener('change', () => {
+    changes += 1;
+    statChange.textContent = changes;
+    record('form', 'change', `volume ${volume.value}`);
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    formMsg.textContent = 'submit · 已阻止默认提交';
+    formMsg.classList.add('is-active');
+    record('form', 'submit', `preventDefault · ${nameInput.value ? '有值' : '空表单'}`);
+  });
+
+  form.addEventListener('reset', () => {
+    formMsg.textContent = 'reset · 表单已重置';
+    formMsg.classList.add('is-active');
+    record('form', 'reset', '表单已重置');
+
+    requestAnimationFrame(() => {
+      volumeOut.value = volume.value;
+      volume.style.setProperty('--fill', `${volume.value}%`);
+    });
+  });
+
+  /* ---------- viewport ---------- */
+
+  const scrollBox = $('#scrollBox');
+  const scrollTopEl = $('#scrollTop');
+  const scrollFill = $('#scrollFill');
+  const resizeCountEl = $('#resizeCount');
+  const viewportSize = $('#viewportSize');
+  const windowFocus = $('#windowFocus');
+  let resizes = 0;
+
+  scrollBox.addEventListener('scroll', () => {
+    const max = scrollBox.scrollHeight - scrollBox.clientHeight;
+    const progress = max > 0 ? scrollBox.scrollTop / max : 0;
+    scrollTopEl.textContent = Math.round(scrollBox.scrollTop);
+    scrollFill.style.transform = `scaleY(${progress})`;
+    record('viewport', 'scroll', `scrollTop ${Math.round(scrollBox.scrollTop)}`);
+  });
+
+  const drawViewport = () => {
+    viewportSize.textContent = `${window.innerWidth}×${window.innerHeight}`;
+  };
+
+  drawViewport();
+
+  window.addEventListener('resize', () => {
+    resizes += 1;
+    resizeCountEl.textContent = resizes;
+    drawViewport();
+    record('viewport', 'resize', `${window.innerWidth} × ${window.innerHeight}`);
+  });
+
+  const setWindowFocus = (isFocused) => {
+    windowFocus.textContent = String(isFocused);
+    windowFocus.dataset.on = String(isFocused);
+    record('viewport', isFocused ? 'focus' : 'blur', 'window');
+  };
+
+  window.addEventListener('focus', () => setWindowFocus(true));
+  window.addEventListener('blur', () => setWindowFocus(false));
+
+  /* initial state */
+
+  windowFocus.textContent = String(document.hasFocus());
+  windowFocus.dataset.on = String(document.hasFocus());
+  refreshCounts();
+})();
+</script>
+</body>
+</html>

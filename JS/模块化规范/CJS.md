@@ -1,4 +1,4 @@
-主要用于服务器端（Node.js 原生支持），文件即模块。
+**CJS** 主要用于服务器端（Node.js 原生支持），文件即模块。
 
 ## 1. 核心特点
 
@@ -50,6 +50,8 @@ console.log(math.subtract(5, 3)); // 输出: 2
 
 `exports` 是指向 `module.exports` 初始内存地址的引用（快捷别名），而最终被导出并被 `require()` 接收的，永远只有 `module.exports`。
 
+下面的示例对比初始状态、正确用法与错误用法：
+
 ```js
 // 初始状态
 exports === module.exports // true（指向同一对象）
@@ -57,17 +59,18 @@ exports === module.exports // true（指向同一对象）
 // 正确用法
 exports.myFunction = function() {}; // ✅ 添加属性
 
-// 错误用法  
+// 错误用法
 exports = { myFunction: function() {} }; // ❌ 重新赋值，切断引用关系
 module.exports = { myFunction: function() {} }; // ✅ 正确替换导出对象
 ```
 
-## 3. 模块加载机制
+## 3. 加载机制
 
-
+### 3.1 执行到 `require` 才加载
 
 CJS 是**执行到 `require` 那一行才加载**，边执行边加载。
 
+以下示例在 `main.js` 中依次引入 `a.js` 与 `b.js`：
 
 ```js
 // main.js
@@ -90,20 +93,21 @@ main 结束
 
 `require` 是**同步**的：读文件、编译、执行完这个模块，才会返回，后面的代码才能继续。
 
-所以：
+### 3.2 与 ESM 静态 `import` 的对比
 
 - **CJS**：`require` 写在哪、什么时候执行，就在那时加载。可以放在 `if` 里、函数里，也可以用变量拼路径。
 - **ESM 静态 `import`**：先全部加载，再执行，不受书写位置影响。
 
-这也是 CJS 无法做 Tree Shaking 的原因：不执行代码，就不知道会 `require` 什么。
+> [!note]
+> 这也是 CJS 无法做 Tree Shaking 的原因：不执行代码，就不知道会 `require` 什么。
 
-## 缓存机制
+## 4. 缓存机制
 
-> require相同的模块会执行几次？
+> `require` 相同的模块会执行几次？
 
 **只执行一次。** 第一次 `require` 会执行模块并把结果存进 `require.cache`，之后再 `require` 同一个模块，直接返回缓存里的 `module.exports`，不会再执行。
 
-js
+以下示例在 `main.js` 中两次 `require` 同一个模块：
 
 ```js
 // a.js
