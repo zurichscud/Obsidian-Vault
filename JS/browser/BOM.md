@@ -1,1 +1,0 @@
-**BOM**：`window`、`location`、`history`、`navigator`

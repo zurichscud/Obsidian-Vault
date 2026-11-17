@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Navigator 环境与设备识别属性</title>
+<style>
+:root {
+  --bg: #fafafa;
+  --fg: #171717;
+  --muted: #737373;
+  --line: #e6e6e6;
+  --card: #ffffff;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f10;
+    --fg: #ededed;
+    --muted: #8a8a8a;
+    --line: #262628;
+    --card: #171718;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 40px 32px 80px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+}
+header {
+  max-width: 980px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+button {
+  font: inherit;
+  font-size: 12px;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+main {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 28px;
+}
+h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--line);
+}
+tr + tr td { border-top: 1px solid var(--line); }
+td {
+  padding: 10px 14px;
+  vertical-align: top;
+}
+td.k {
+  width: 280px;
+  font-family: var(--mono);
+  font-size: 12px;
+}
+td.k .note {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+td.v {
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.missing { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Navigator 环境与设备识别属性</h1>
+  <div class="bar">
+    <span id="count"></span>
+    <button id="copy" type="button">复制 JSON</button>
+  </div>
+</header>
+<main id="app"></main>
+<script>
+(function () {
+  'use strict';
+
+  var groups = [];
+  var groupMap = {};
+  var n = navigator;
+
+  function add(group, key, note, value) {
+    var g = groupMap[group];
+    if (!g) {
+      g = { name: group, rows: [] };
+      groupMap[group] = g;
+      groups.push(g);
+    }
+    var row = { key: key, note: note, value: value };
+    g.rows.push(row);
+    return row;
+  }
+
+  function read(fn) {
+    try { return fn(); } catch (e) { return undefined; }
+  }
+
+  function supportedRows(g) {
+    return g.rows.filter(function (row) { return row.value !== undefined; });
+  }
+
+  function formatHighEntropy(v) {
+    return Object.keys(v).map(function (k) {
+      var val = v[k];
+      if (Array.isArray(val)) {
+        val = val.map(function (x) {
+          return x && typeof x === 'object' ? Object.values(x).join(' ') : String(x);
+        }).join(', ');
+      }
+      return k + ': ' + val;
+    }).join('\n');
+  }
+
+  /* 基本信息 */
+  add('基本信息', 'userAgent', '浏览器用户代理字符串', read(function () { return n.userAgent; }));
+  add('基本信息', 'appName', '浏览器名称', read(function () { return n.appName; }));
+  add('基本信息', 'appVersion', '浏览器版本信息', read(function () { return n.appVersion; }));
+  add('基本信息', 'platform', '操作系统平台', read(function () { return n.platform; }));
+  add('基本信息', 'vendor', '浏览器厂商', read(function () { return n.vendor; }));
+  add('基本信息', 'product', '产品名', read(function () { return n.product; }));
+  add('基本信息', 'productSub', '产品子版本', read(function () { return n.productSub; }));
+  add('基本信息', 'buildID', '构建 ID（Firefox）', read(function () { return n.buildID; }));
+  add('基本信息', 'oscpu', 'CPU 与系统（Firefox）', read(function () { return n.oscpu; }));
+
+  /* Client Hints，仅支持的浏览器显示 */
+  var uaData = read(function () { return n.userAgentData; });
+  if (uaData) {
+    add('Client Hints', 'brands', '浏览器品牌与主版本', read(function () {
+      return uaData.brands.map(function (b) { return b.brand + ' ' + b.version; });
+    }));
+    add('Client Hints', 'mobile', '是否移动设备', read(function () { return uaData.mobile; }));
+    add('Client Hints', 'platform', '系统平台', read(function () { return uaData.platform; }));
+
+    var highEntropyRow = add('Client Hints', 'getHighEntropyValues()', '高熵值：架构、机型、完整版本', '读取中…');
+    if (typeof uaData.getHighEntropyValues === 'function') {
+      uaData.getHighEntropyValues([
+        'architecture', 'bitness', 'model', 'platformVersion',
+        'uaFullVersion', 'fullVersionList', 'wow64', 'formFactors'
+      ]).then(function (v) {
+        highEntropyRow.value = formatHighEntropy(v);
+        render();
+      }).catch(function () {
+        highEntropyRow.value = undefined;
+        render();
+      });
+    } else {
+      highEntropyRow.value = undefined;
+    }
+  }
+
+  /* 硬件 */
+  add('硬件', 'hardwareConcurrency', '逻辑 CPU 核心数', read(function () { return n.hardwareConcurrency; }));
+  add('硬件', 'deviceMemory', '设备内存（GB，取整）', read(function () { return n.deviceMemory; }));
+  add('硬件', 'maxTouchPoints', '最大触摸点数', read(function () { return n.maxTouchPoints; }));
+
+  /* 语言与区域 */
+  add('语言与区域', 'language', '首选语言', read(function () { return n.language; }));
+  add('语言与区域', 'languages', '语言偏好列表', read(function () { return n.languages; }));
+  add('语言与区域', 'timeZone', '系统时区（Intl）', read(function () {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }));
+  add('语言与区域', 'locale', '区域设置（Intl）', read(function () {
+    return Intl.DateTimeFormat().resolvedOptions().locale;
+  }));
+
+  /* 能力与状态 */
+  add('能力与状态', 'cookieEnabled', '是否启用 Cookie', read(function () { return n.cookieEnabled; }));
+  add('能力与状态', 'doNotTrack', 'Do Not Track 请求头', read(function () { return n.doNotTrack; }));
+  add('能力与状态', 'webdriver', '是否由 WebDriver 驱动（自动化识别）', read(function () { return n.webdriver; }));
+  add('能力与状态', 'pdfViewerEnabled', '内置 PDF 查看器', read(function () { return n.pdfViewerEnabled; }));
+
+  /* 插件 */
+  add('插件', 'plugins', '已注册插件名称', read(function () {
+    return Array.prototype.map.call(n.plugins, function (p) { return p.name; });
+  }));
+
+  /* 补充环境 */
+  add('补充环境', 'screen', '屏幕分辨率', read(function () { return screen.width + ' × ' + screen.height; }));
+  add('补充环境', 'devicePixelRatio', '像素密度比', read(function () { return window.devicePixelRatio; }));
+  add('补充环境', 'colorDepth', '颜色深度（bit）', read(function () { return screen.colorDepth; }));
+  add('补充环境', 'WebGL vendor / renderer', 'GPU 与驱动标识', read(function () {
+    var canvas = document.createElement('canvas');
+    var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) return '不支持 WebGL';
+    var ext = gl.getExtension('WEBGL_debug_renderer_info');
+    var vendor = ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR);
+    var renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+    return vendor + '\n' + renderer;
+  }));
+
+  function fmt(v) {
+    if (v === undefined) return { text: '', missing: true };
+    if (v === null) return { text: 'null（未设置）', missing: true };
+    if (typeof v === 'string') {
+      return v === '' ? { text: '(空)', missing: true } : { text: v, missing: false };
+    }
+    if (typeof v === 'number' || typeof v === 'boolean') {
+      return { text: String(v), missing: false };
+    }
+    if (Array.isArray(v)) {
+      return {
+        text: v.length ? v.map(function (x) {
+          return x && typeof x === 'object' ? JSON.stringify(x) : String(x);
+        }).join(', ') : '(空)',
+        missing: v.length === 0
+      };
+    }
+    return { text: JSON.stringify(v, null, 2), missing: false };
+  }
+
+  var app = document.getElementById('app');
+
+  function render() {
+    var frag = document.createDocumentFragment();
+    var total = 0;
+
+    groups.forEach(function (g) {
+      var rows = supportedRows(g);
+      if (!rows.length) return;
+      total += rows.length;
+
+      var section = document.createElement('section');
+      var h2 = document.createElement('h2');
+      h2.textContent = g.name;
+
+      var table = document.createElement('table');
+      var tbody = document.createElement('tbody');
+
+      rows.forEach(function (row) {
+        var tr = document.createElement('tr');
+
+        var tdK = document.createElement('td');
+        tdK.className = 'k';
+        tdK.textContent = row.key;
+        if (row.note) {
+          var note = document.createElement('span');
+          note.className = 'note';
+          note.textContent = row.note;
+          tdK.appendChild(note);
+        }
+
+        var tdV = document.createElement('td');
+        tdV.className = 'v';
+        var f = fmt(row.value);
+        tdV.textContent = f.text;
+        if (f.missing) tdV.classList.add('missing');
+
+        tr.appendChild(tdK);
+        tr.appendChild(tdV);
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      section.appendChild(h2);
+      section.appendChild(table);
+      frag.appendChild(section);
+    });
+
+    app.textContent = '';
+    app.appendChild(frag);
+    document.getElementById('count').textContent = '共 ' + total + ' 项';
+  }
+
+  var copyBtn = document.getElementById('copy');
+  copyBtn.addEventListener('click', function () {
+    var data = {};
+    groups.forEach(function (g) {
+      var rows = supportedRows(g);
+      if (!rows.length) return;
+      data[g.name] = {};
+      rows.forEach(function (row) {
+        data[g.name][row.key] = row.value === null ? null : row.value;
+      });
+    });
+    var text = JSON.stringify(data, null, 2);
+
+    function done() {
+      copyBtn.textContent = '已复制';
+      setTimeout(function () { copyBtn.textContent = '复制 JSON'; }, 1500);
+    }
+
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      done();
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
