@@ -33,6 +33,37 @@ JavaScript 是**单线程**的：同一时刻只能执行一段代码。而网�
 > [!note] 微任务语义
 > 当前任务的“收尾延续”
 
+### 宏任务队列顺序
+
+> 宏任务队列的顺序是按“任务完成（就绪）的时间”入队的
+
+```js
+app.get('/user', async (req, res) => {
+  const user = await db.query('SELECT * FROM users');
+  res.json(user);
+});
+
+app.get('/file', async (req, res) => {
+  const data = await fs.promises.readFile('./test.txt');
+  res.send(data);
+});
+
+app.get('/hello', (req, res) => {
+  res.send('Hello');
+});
+```
+
+主线程按 A → B → C 的顺序依次接收请求，并把耗时的 I/O 操作（查数据库、读文件）丢给底层的线程池或操作系统内核去后台并行处理，**此时它们的回调函数并没有进入宏任务队列**。
+
+- **0ms**：收到 A 请求 $\rightarrow$ 把“查数据库”交给后台线程，**主线程立刻释放**。
+    
+- **1ms**：收到 B 请求 $\rightarrow$ 把“读文件”交给后台线程，**主线程立刻释放**。
+    
+- **2ms**：收到 C 请求 $\rightarrow$ 简单计算（无需耗时 I/O），**10ms 后直接在主线程执行完并返回**。
+    
+
+此时，A 和 B 都在后台各自的线程里“闷头干活”，**宏任务队列里是空的**。
+
 ## 3. 执行流程
 
 ### 3.1 执行步骤
